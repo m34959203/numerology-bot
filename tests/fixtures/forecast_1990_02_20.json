@@ -1,0 +1,16 @@
+{
+  "_source": "Эталон прогноза на 5 лет (РАСЧЕТ B49+) из кэша Excel, N9=20.02.1990, сегодня=06.06.2026",
+  "input": { "birth_date": "1990-02-20", "reference_date": "2026-06-06" },
+  "expected": [
+    {"year":2026,"age":36,"personal_year":5,"moon":4,"sun":2,"year_value":-2,
+     "year_value_text":"потеря отношений с близкими людьми","personal_year_text":"год изменений"},
+    {"year":2027,"age":37,"personal_year":6,"moon":3,"sun":6,"year_value":3,
+     "year_value_text":"удачный год, лотерея","personal_year_text":"год семьи"},
+    {"year":2028,"age":38,"personal_year":7,"moon":2,"sun":13,"year_value":11,
+     "year_value_text":"11","personal_year_text":"год духовных поисков"},
+    {"year":2029,"age":39,"personal_year":8,"moon":2,"sun":5,"year_value":3,
+     "year_value_text":"удачный год, лотерея","personal_year_text":"год проверки на честность"},
+    {"year":2030,"age":40,"personal_year":9,"moon":10,"sun":9,"year_value":-1,
+     "year_value_text":"незначительный спад","personal_year_text":"завершающий год"}
+  ]
+}

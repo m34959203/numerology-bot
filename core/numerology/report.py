@@ -14,6 +14,8 @@ from datetime import date
 
 from core.content.loader import interpret
 from core.numerology.biorhythm import compute_biorhythm
+from core.numerology.codes import compute_codes
+from core.numerology.matrix import compute_forecast
 from core.numerology.person import PersonInput
 from core.numerology.psychomatrix import compute_psychomatrix
 
@@ -94,9 +96,22 @@ def build_biorhythm_section(person: PersonInput, reference_date: date | None = N
     }
 
 
+def build_calculations_section(person: PersonInput, reference_date: date | None = None) -> dict:
+    """Блок «Вычисления» (коды от даты, лист Matr → РАСЧЕТ AN6..AN15)."""
+    return compute_codes(person, reference_date)
+
+
+def build_forecast_section(person: PersonInput, reference_date: date | None = None) -> list[dict]:
+    """Блок «Прогноз на 5 лет» (Matr 29–33 → РАСЧЕТ)."""
+    return compute_forecast(person, reference_date)
+
+
 def build_report(person: PersonInput, reference_date: date | None = None) -> dict:
-    """Собрать доступную часть отчёта (Этап 2). Matr-разделы — позже."""
+    """Собрать доступную часть отчёта. Остаток Matr (опасный возраст,
+    судьбоносные события, 12-цикл, энергопотенциал) — позже."""
     return {
+        "calculations": build_calculations_section(person, reference_date),
         "psychomatrix": build_psychomatrix_section(person),
         "days": build_biorhythm_section(person, reference_date),
+        "forecast": build_forecast_section(person, reference_date),
     }

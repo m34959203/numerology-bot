@@ -37,3 +37,12 @@ def test_report_days_present():
     rep = build_report(PERSON, date(2025, 7, 27))
     assert rep["days"]["favorable"][0] == "2025-08-18"
     assert len(rep["days"]["critical"]) == 5
+
+
+def test_report_calculations_and_forecast():
+    rep = build_report(PERSON, date(2025, 7, 27))
+    assert rep["calculations"]["human_code"] == "44"
+    assert rep["calculations"]["life_code"] == "200000"
+    assert len(rep["forecast"]) == 5
+    assert rep["forecast"][0]["age"] == 25
+    assert rep["forecast"][0]["personal_year"] == 2
