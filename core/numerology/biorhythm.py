@@ -46,13 +46,20 @@ _CYCLE_PHYS = 23
 _CYCLE_EMO = 28
 _CYCLE_INTEL = 33
 
-# Дефолтные лимиты вывода (воспроизводят пример книги: 7 благоприятных, 5
-# критических, 5 травмоопасных). В Excel у категорий разные окна/число слотов
-# (благоприятные считаются «кластерами», критические ограничены ~годовым окном) —
-# точные правила вывода согласуются с заказчиком, см. OPEN_QUESTIONS. Движок
-# (рекуррента + классификация) от этого не зависит и совпадает с книгой 1:1.
-DEFAULT_HORIZON_DAYS = 900
-DEFAULT_COUNTS = {"favorable": 7, "critical": 5, "traumatic": 5}
+# Правила вывода особых дней (display-слоты РАСЧЕТ BD6/BD9/BD12 = 7/7/5).
+# Выверено по ДВУМ эталонам книги (01.01.2000 и 28.05.1994):
+#   благоприятные — первые 7 вперёд (count);
+#   травмоопасные — первые 5 вперёд (count);
+#   критические   — все в окне 365 дней, не более 7 (window, у Excel — годовой
+#                   диапазон строк-кандидатов 436..801). count даёт 5 и 2 соответственно.
+# Формат: count = максимум дат; window_days = только в пределах N дней (None = без окна).
+DEFAULT_SPEC: dict[str, dict[str, int | None]] = {
+    "favorable": {"count": 7, "window_days": None},
+    "critical": {"count": 7, "window_days": 365},
+    "traumatic": {"count": 5, "window_days": None},
+}
+# Верхняя граница итерации (благоприятные/травмоопасные без окна — ищем вперёд).
+MAX_SCAN_DAYS = 2000
 
 
 def _xround(x: float) -> int:
@@ -116,28 +123,34 @@ def phase_on(person: PersonInput, day: date) -> DayPhase:
 def special_days(
     person: PersonInput,
     reference_date: date,
-    horizon_days: int = DEFAULT_HORIZON_DAYS,
-    counts: dict[str, int] | None = None,
+    spec: dict[str, dict[str, int | None]] | None = None,
 ) -> dict[str, list[date]]:
-    """Ближайшие особые дни вперёд от reference_date в пределах горизонта.
+    """Ближайшие особые дни вперёд от reference_date.
 
+    Каждая категория ограничена своим count и опциональным окном (window_days).
     Возвращает {'favorable': [...], 'critical': [...], 'traumatic': [...]}.
     """
-    counts = counts or DEFAULT_COUNTS
-    horizon = reference_date + timedelta(days=horizon_days)
-    fav: list[date] = []
-    crit: list[date] = []
-    trauma: list[date] = []
+    spec = spec or DEFAULT_SPEC
+    horizon = reference_date + timedelta(days=MAX_SCAN_DAYS)
+    out: dict[str, list[date]] = {"favorable": [], "critical": [], "traumatic": []}
+    checks = {
+        "favorable": lambda p: p.is_favorable,
+        "critical": lambda p: p.is_critical,
+        "traumatic": lambda p: p.is_traumatic,
+    }
     for d, ph in iter_phases(person.birth_date, horizon):
         if d < reference_date:
             continue
-        if ph.is_favorable and len(fav) < counts["favorable"]:
-            fav.append(d)
-        if ph.is_critical and len(crit) < counts["critical"]:
-            crit.append(d)
-        if ph.is_traumatic and len(trauma) < counts["traumatic"]:
-            trauma.append(d)
-    return {"favorable": fav, "critical": crit, "traumatic": trauma}
+        for kind, rule in spec.items():
+            lst = out[kind]
+            if len(lst) >= rule["count"]:
+                continue
+            window = rule["window_days"]
+            if window is not None and (d - reference_date).days > window:
+                continue
+            if checks[kind](ph):
+                lst.append(d)
+    return out
 
 
 def compute_biorhythm(person: PersonInput, reference_date: date | None = None) -> dict:

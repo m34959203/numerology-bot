@@ -20,7 +20,9 @@ def _load(name: str) -> dict:
     return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
 
 
-@pytest.mark.parametrize("fixture", ["psychomatrix_2000_01_01.json"])
+@pytest.mark.parametrize(
+    "fixture", ["psychomatrix_2000_01_01.json", "psychomatrix_1994_05_28.json"]
+)
 def test_psychomatrix_matches_excel(fixture):
     data = _load(fixture)
     bd = date.fromisoformat(data["input"]["birth_date"])
