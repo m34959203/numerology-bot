@@ -2,6 +2,27 @@
 
 > Чек-поинты по ходу задачи. Продолжать отсюда.
 
+## 2026-06-06 — Этап 1: инфраструктура бота (СДЕЛАНО)
+
+Расчётный слой закрыт ранее → собрал бота вокруг ядра. Всё чисто импортируется,
+диспетчер из 6 роутеров, 31 тест зелёный, lint чист.
+- `core/db.py` (async engine/session), `core/repositories.py` (CRUD + **идемпотентный
+  платёж** по charge_id), `core/render.py` (отчёт → plain-text, разбивка 4096),
+  `core/validators.py` (даты ДД.ММ.ГГГГ, имена кириллица+kk).
+- `bot/`: start (меню), catalog (услуги/карточка/invoice XTR), payment (pre_checkout +
+  successful_payment → запись + запуск анкеты), survey (FSM ФИО+дата → confirm → расчёт+
+  выдача split), results («Мои расчёты», повторная выдача), admin (статистика, /refund).
+- `bot/main.py`: on_startup = create_all + seed_services; polling. Каталог-сид в
+  `bot/catalog_data.py` (цена placeholder 100⭐). Порядок «оплата → анкета».
+- Тесты: `test_render`, `test_validators`, `test_repositories` (aiosqlite). aiosqlite в dev-deps.
+
+**Для прод-запуска осталось:** реальный `BOT_TOKEN` + PostgreSQL (Alembic-миграция вместо
+create_all), приёмочный прогон живого бота. **Расчёты от ИМЕНИ** (число/карма имени) и
+2-е кармическое событие (BG20-баг) — по-прежнему открыты (ФИО-эталоны). PDF-выдача — Этап 6.
+
+**ВАЖНО (среда):** в окружении нет `libreoffice-calc` (только -core) → автопересчёт xlsx
+здесь невозможен; сверка с Excel — через кэш заполненной книги (как делалось, 3 примера 1:1).
+
 ## 2026-06-05 — каркас + психоматрица
 
 **Сделано:**
