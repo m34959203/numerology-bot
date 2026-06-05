@@ -30,7 +30,5 @@ async def cb_main(query: CallbackQuery) -> None:
 
 @router.callback_query(F.data == "menu:help")
 async def cb_help(query: CallbackQuery) -> None:
-    await query.message.edit_text(
-        texts.HELP, reply_markup=keyboards.main_menu(), parse_mode="HTML"
-    )
+    await query.message.edit_text(texts.HELP, reply_markup=keyboards.main_menu(), parse_mode="HTML")
     await query.answer()
