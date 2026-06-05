@@ -1,0 +1,122 @@
+{
+ "attitude_to_labor": {
+  "keys": 7,
+  "multi": false,
+  "src": "O44"
+ },
+ "behavior_code": {
+  "keys": 12,
+  "multi": false,
+  "src": "AR38"
+ },
+ "character": {
+  "keys": 8,
+  "multi": false,
+  "src": "K32"
+ },
+ "consciousness_level": {
+  "keys": 59,
+  "multi": false,
+  "src": "AR40"
+ },
+ "duty": {
+  "keys": 5,
+  "multi": false,
+  "src": "S36"
+ },
+ "energy": {
+  "keys": 7,
+  "multi": false,
+  "src": "K36"
+ },
+ "family_quality": {
+  "keys": 10,
+  "multi": false,
+  "src": "W36"
+ },
+ "health": {
+  "keys": 5,
+  "multi": false,
+  "src": "O32"
+ },
+ "human_code": {
+  "keys": 56,
+  "multi": false,
+  "src": "AR30"
+ },
+ "interest": {
+  "keys": 6,
+  "multi": false,
+  "src": "K40"
+ },
+ "labor": {
+  "keys": 5,
+  "multi": false,
+  "src": "O40"
+ },
+ "life_path": {
+  "keys": 12,
+  "multi": true,
+  "src": "AR34"
+ },
+ "logic": {
+  "keys": 5,
+  "multi": false,
+  "src": "O36"
+ },
+ "luck": {
+  "keys": 5,
+  "multi": false,
+  "src": "S32"
+ },
+ "memory": {
+  "keys": 6,
+  "multi": false,
+  "src": "S40"
+ },
+ "personal_year": {
+  "keys": 9,
+  "multi": false,
+  "src": "P55"
+ },
+ "purposefulness": {
+  "keys": 10,
+  "multi": false,
+  "src": "W32"
+ },
+ "purposefulness_by_character": {
+  "keys": 6,
+  "multi": false,
+  "src": "K32"
+ },
+ "self_esteem": {
+  "keys": 10,
+  "multi": false,
+  "src": "K44"
+ },
+ "self_esteem_by_character": {
+  "keys": 6,
+  "multi": false,
+  "src": "K32"
+ },
+ "soul_number": {
+  "keys": 31,
+  "multi": true,
+  "src": "AR36"
+ },
+ "spiritual_material_balance": {
+  "keys": 10,
+  "multi": false,
+  "src": "W44"
+ },
+ "stability": {
+  "keys": 10,
+  "multi": false,
+  "src": "W40"
+ },
+ "temperament": {
+  "keys": 10,
+  "multi": false,
+  "src": "W28"
+ }
+}
