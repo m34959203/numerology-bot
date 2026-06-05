@@ -37,10 +37,21 @@ _BOLD_CANDIDATES = [
     "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
 ]
 _PSYCHO_ORDER = [
-    "Характер", "Энергия", "Интерес", "Здоровье", "Логика, интуиция",
-    "Труд, власть", "Везение", "Чувство долга", "Ум, память",
-    "Самооценка", "Отношение к труду", "Целеустремлённость",
-    "Качество семьянина", "Стабильность", "Темперамент",
+    "Характер",
+    "Энергия",
+    "Интерес",
+    "Здоровье",
+    "Логика, интуиция",
+    "Труд, власть",
+    "Везение",
+    "Чувство долга",
+    "Ум, память",
+    "Самооценка",
+    "Отношение к труду",
+    "Целеустремлённость",
+    "Качество семьянина",
+    "Стабильность",
+    "Темперамент",
 ]
 _fonts_ready = False
 
@@ -76,8 +87,13 @@ def _styles():
         "title": ParagraphStyle("title", parent=base, fontName=_FONT_BOLD, fontSize=16, leading=20),
         "sub": ParagraphStyle("sub", parent=base, fontSize=11, leading=15),
         "h": ParagraphStyle(
-            "h", parent=base, fontName=_FONT_BOLD, fontSize=13, leading=18,
-            spaceBefore=10, spaceAfter=4,
+            "h",
+            parent=base,
+            fontName=_FONT_BOLD,
+            fontSize=13,
+            leading=18,
+            spaceBefore=10,
+            spaceAfter=4,
         ),
         "p": base,
         "small": ParagraphStyle("small", parent=base, fontSize=9, leading=12),
@@ -109,26 +125,31 @@ def build_report_pdf(report: dict, full_name: str, birth_date: date | None) -> b
 
     danger = c["danger_age"] if c["danger_age"] is not None else "нет"
     flow.append(Paragraph("Исходные данные и вычисления", s["h"]))
-    flow.append(Paragraph(
-        f"Полных лет: {c['full_years']} · Прожито дней: {c['lived_days']} · "
-        f"Жизнь: {c['life_task']} · Духовный уровень: {c['spiritual_level']}<br/>"
-        f"Код человека: {_e(c['human_code'])} · Код жизни: {_e(c['life_code'])} · "
-        f"Финансовый код: {_e(c['finance_code'])} · Счастливые числа: {_e(c['lucky_numbers'])}<br/>"
-        f"Доступ к деньгам: {c['money_access']} · Жизненные силы: {c['vitality']} · "
-        f"Опасный возраст: {danger}",
-        s["p"],
-    ))
+    flow.append(
+        Paragraph(
+            f"Полных лет: {c['full_years']} · Прожито дней: {c['lived_days']} · "
+            f"Жизнь: {c['life_task']} · Духовный уровень: {c['spiritual_level']}<br/>"
+            f"Код человека: {_e(c['human_code'])} · Код жизни: {_e(c['life_code'])} · "
+            f"Финансовый код: {_e(c['finance_code'])} · "
+            f"Счастливые числа: {_e(c['lucky_numbers'])}<br/>"
+            f"Доступ к деньгам: {c['money_access']} · Жизненные силы: {c['vitality']} · "
+            f"Опасный возраст: {danger}",
+            s["p"],
+        )
+    )
 
     flow.append(Paragraph("Психоматрица", s["h"]))
     grid = " · ".join(f"{_e(lbl)}: {_val(q[lbl]['value'])}" for lbl in _PSYCHO_ORDER)
     flow.append(Paragraph(grid, s["p"]))
-    flow.append(Paragraph(
-        f"Число души: {sc['Число души']['value']} · "
-        f"ЧЖП: {sc['Число жизненного пути (ЧЖП)']['value']} · "
-        f"Уровень сознания: {sc['Уровень сознания']['value']} · "
-        f"Код поведения: {_e(sc['Код поведения']['value'])}",
-        s["small"],
-    ))
+    flow.append(
+        Paragraph(
+            f"Число души: {sc['Число души']['value']} · "
+            f"ЧЖП: {sc['Число жизненного пути (ЧЖП)']['value']} · "
+            f"Уровень сознания: {sc['Уровень сознания']['value']} · "
+            f"Код поведения: {_e(sc['Код поведения']['value'])}",
+            s["small"],
+        )
+    )
     flow.append(Spacer(1, 4))
     for lbl in _PSYCHO_ORDER:
         text = q[lbl]["text"]
@@ -138,12 +159,14 @@ def build_report_pdf(report: dict, full_name: str, birth_date: date | None) -> b
             )
 
     flow.append(Paragraph("Благоприятные / критические / травмоопасные дни", s["h"]))
-    flow.append(Paragraph(
-        f"Благоприятные: {', '.join(_fmt_dates(days['favorable']))}<br/>"
-        f"Критические: {', '.join(_fmt_dates(days['critical'])) or '—'}<br/>"
-        f"Травмоопасные: {', '.join(_fmt_dates(days['traumatic']))}",
-        s["p"],
-    ))
+    flow.append(
+        Paragraph(
+            f"Благоприятные: {', '.join(_fmt_dates(days['favorable']))}<br/>"
+            f"Критические: {', '.join(_fmt_dates(days['critical'])) or '—'}<br/>"
+            f"Травмоопасные: {', '.join(_fmt_dates(days['traumatic']))}",
+            s["p"],
+        )
+    )
 
     flow.append(Paragraph("Прогноз на 5 лет", s["h"]))
     for f in fc:
@@ -153,23 +176,28 @@ def build_report_pdf(report: dict, full_name: str, birth_date: date | None) -> b
             else ""
         )
         sign = "+" if f["year_value"] >= 0 else ""
-        flow.append(Paragraph(
-            f"<b>{f['year']} (возраст {f['age']})</b>: {f['personal_year']} — "
-            f"{_e(f['personal_year_text'])}; Луна {f['moon']} / Солнце {f['sun']}; "
-            f"год {sign}{f['year_value']} — {_e(f['year_value_text'])}; "
-            f"судьбоносный: {f['fate']}{cyc}",
-            s["p"],
-        ))
+        flow.append(
+            Paragraph(
+                f"<b>{f['year']} (возраст {f['age']})</b>: {f['personal_year']} — "
+                f"{_e(f['personal_year_text'])}; Луна {f['moon']} / Солнце {f['sun']}; "
+                f"год {sign}{f['year_value']} — {_e(f['year_value_text'])}; "
+                f"судьбоносный: {f['fate']}{cyc}",
+                s["p"],
+            )
+        )
 
     flow.append(Paragraph("Луна и Солнце по месяцам", s["h"]))
     for m in ms["monthly"]:
         flow.append(Paragraph(f"<b>{_e(m['month_name'])}</b>: {_e(m['text'])}", s["p"]))
 
     flow.append(Paragraph("Личные числа (на дату отчёта)", s["h"]))
-    flow.append(Paragraph(
-        f"Год: {pn['personal_year']} · Месяц: {pn['personal_month']} · День: {pn['personal_day']}",
-        s["p"],
-    ))
+    flow.append(
+        Paragraph(
+            f"Год: {pn['personal_year']} · Месяц: {pn['personal_month']} · "
+            f"День: {pn['personal_day']}",
+            s["p"],
+        )
+    )
     if pn["combo_title"]:
         flow.append(Paragraph(f"<b>{_e(pn['combo_title'])}</b>", s["p"]))
         flow.append(Paragraph(_e(pn["combo_text"]), s["p"]))
@@ -180,8 +208,13 @@ def build_report_pdf(report: dict, full_name: str, birth_date: date | None) -> b
 
     buf = BytesIO()
     doc = SimpleDocTemplate(
-        buf, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm,
-        topMargin=16 * mm, bottomMargin=16 * mm, title="Нумерологическая матрица",
+        buf,
+        pagesize=A4,
+        leftMargin=18 * mm,
+        rightMargin=18 * mm,
+        topMargin=16 * mm,
+        bottomMargin=16 * mm,
+        title="Нумерологическая матрица",
     )
     doc.build(flow)
     return buf.getvalue()
