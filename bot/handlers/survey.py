@@ -15,11 +15,11 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from bot import keyboards, texts
+from bot.delivery import deliver_report
 from bot.states.survey import SurveyStates
 from core.db import session_scope
 from core.numerology import PersonInput
 from core.numerology.report import build_report
-from core.render import render_report, split_message
 from core.repositories import save_result, save_survey
 from core.validators import ValidationError, parse_birth_date, validate_name
 
@@ -116,7 +116,6 @@ async def cb_confirm(query: CallbackQuery, state: FSMContext) -> None:
     reference = datetime.now(UTC).date()
     report = build_report(person, reference)
     full_name = f"{person.last_name} {person.first_name} {person.middle_name}"
-    text = render_report(report, full_name, person.birth_date)
 
     async with session_scope() as session:
         order_id = data["order_id"]
@@ -130,8 +129,7 @@ async def cb_confirm(query: CallbackQuery, state: FSMContext) -> None:
         )
         await save_result(session, order_id, json.dumps(report, ensure_ascii=False))
 
-    for chunk in split_message(text):
-        await query.message.answer(chunk)
+    await deliver_report(query.message, report, full_name, person.birth_date)
     await state.clear()
     await query.message.answer(
         "Готово! Ваши расчёты — в меню «Мои расчёты».",

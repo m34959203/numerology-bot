@@ -8,8 +8,8 @@ from aiogram import F, Router
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 
 from bot import keyboards, texts
+from bot.delivery import deliver_report
 from core.db import session_scope
-from core.render import render_report, split_message
 from core.repositories import get_or_create_user, get_result, get_survey, list_results
 
 router = Router(name="results")
@@ -56,6 +56,4 @@ async def cb_open_result(query: CallbackQuery) -> None:
         birth = survey.birth_date if survey else None
 
     await query.answer()
-    text = render_report(report, full_name, birth)
-    for chunk in split_message(text):
-        await query.message.answer(chunk)
+    await deliver_report(query.message, report, full_name, birth)

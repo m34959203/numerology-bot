@@ -13,7 +13,9 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://numerology:CHANGE_ME@localhost:5432/numerology"
 
     excel_source_path: str = "./ПРОГРАММА_МАТРИЦА_на_русском.xlsx"
-    report_format: str = "text"  # text | pdf | both
+    report_format: str = "pdf"  # text | pdf | both
+    # Путь к TTF-шрифту с кириллицей для PDF. Пусто → поиск по системным путям.
+    pdf_font_path: str = ""
 
     run_mode: str = "polling"  # polling | webhook
     webhook_base_url: str = ""

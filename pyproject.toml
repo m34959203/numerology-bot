@@ -11,6 +11,7 @@ dependencies = [
     "alembic>=1.13",
     "pydantic-settings>=2.4",
     "python-dateutil>=2.9",
+    "reportlab>=4.2",
 ]
 
 [project.optional-dependencies]
@@ -20,9 +21,6 @@ dev = [
     "aiosqlite>=0.20",
     "ruff>=0.6",
     "black>=24.0",
-]
-pdf = [
-    "reportlab>=4.2",
 ]
 excel = [
     "openpyxl>=3.1",
