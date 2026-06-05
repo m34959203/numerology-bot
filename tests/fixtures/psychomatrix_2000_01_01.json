@@ -1,0 +1,27 @@
+{
+  "_source": "Эталон из кэшированных значений Excel (лист РАСЧЕТ/calc), вход C12=01.01.2000",
+  "input": { "birth_date": "2000-01-01" },
+  "expected": {
+    "character": 11,
+    "energy": 222,
+    "interest": 0,
+    "health": 44,
+    "logic": 0,
+    "labor": 0,
+    "luck": 0,
+    "duty": 0,
+    "memory": 0,
+    "self_esteem": 5,
+    "purposefulness": 4,
+    "family_quality": 3,
+    "attitude_to_labor": 2,
+    "stability": 0,
+    "talents": 0,
+    "temperament": 0,
+    "soul_number": 1,
+    "consciousness_level": 4,
+    "life_path": 4,
+    "life_code": "200000",
+    "behavior_code": "22.12-20.01 код Карьеры"
+  }
+}
