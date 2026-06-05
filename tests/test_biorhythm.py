@@ -27,9 +27,9 @@ def test_biorhythm_matches_excel(fixture):
     ref = date.fromisoformat(data["input"]["reference_date"])
     result = compute_biorhythm(person, ref)
     for kind in ("favorable", "critical", "traumatic"):
-        assert result[kind] == data["expected"][kind], (
-            f"{kind}: получили {result[kind]}, эталон {data['expected'][kind]}"
-        )
+        assert (
+            result[kind] == data["expected"][kind]
+        ), f"{kind}: получили {result[kind]}, эталон {data['expected'][kind]}"
 
 
 def test_phase_at_birth_is_zero():
