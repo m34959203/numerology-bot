@@ -19,3 +19,18 @@ def test_forecast_matches_excel():
     for g, e in zip(got, data["expected"], strict=True):
         for key, exp in e.items():
             assert g[key] == exp, f"год {e['year']} {key}: получили {g[key]!r}, эталон {exp!r}"
+
+
+def test_danger_age():
+    from core.numerology.matrix import danger_age
+
+    # ex1: солнце=0 на возрасте 25; жен. пример: нет опасного возраста
+    assert danger_age(PersonInput("", "", None, date(2000, 1, 1)), date(2025, 7, 27)) == 25
+    assert danger_age(PersonInput("", "", None, date(1990, 2, 20)), date(2026, 6, 6)) is None
+
+
+def test_fate_years_contains_anchor():
+    from core.numerology.matrix import fate_years
+
+    # цепочка от 1990: первый якорь 1990+Σцифр=2009
+    assert 2009 in fate_years(1990)

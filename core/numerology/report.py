@@ -15,7 +15,7 @@ from datetime import date
 from core.content.loader import interpret
 from core.numerology.biorhythm import compute_biorhythm
 from core.numerology.codes import compute_codes
-from core.numerology.matrix import compute_forecast
+from core.numerology.matrix import compute_forecast, danger_age
 from core.numerology.person import PersonInput
 from core.numerology.psychomatrix import compute_psychomatrix
 
@@ -97,8 +97,14 @@ def build_biorhythm_section(person: PersonInput, reference_date: date | None = N
 
 
 def build_calculations_section(person: PersonInput, reference_date: date | None = None) -> dict:
-    """Блок «Вычисления» (коды от даты, лист Matr → РАСЧЕТ AN6..AN15)."""
-    return compute_codes(person, reference_date)
+    """Блок «Вычисления» (коды от даты, лист Matr → РАСЧЕТ AN6..AN16)."""
+    if reference_date is None:
+        from datetime import UTC, datetime
+
+        reference_date = datetime.now(UTC).date()
+    section = compute_codes(person, reference_date)
+    section["danger_age"] = danger_age(person, reference_date)
+    return section
 
 
 def build_forecast_section(person: PersonInput, reference_date: date | None = None) -> list[dict]:

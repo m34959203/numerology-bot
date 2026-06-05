@@ -46,3 +46,5 @@ def test_report_calculations_and_forecast():
     assert len(rep["forecast"]) == 5
     assert rep["forecast"][0]["age"] == 25
     assert rep["forecast"][0]["personal_year"] == 2
+    assert rep["calculations"]["danger_age"] == 25
+    assert rep["forecast"][0]["fate"] in ("+", "-")

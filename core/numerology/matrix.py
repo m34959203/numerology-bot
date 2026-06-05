@@ -11,12 +11,15 @@
 
 Сверено с эталоном книги (20.02.1990, сегодня 06.06.2026), нулевой допуск.
 
-НЕ реализованы (требуют доп. реверса глубоких цепочек Matr, см. docs/excel-analysis):
-- «судьбоносные события» Z (+/−): Matr!D = есть ли год в списке «судьбоносных годов»
-  BK9:48 (цепочка BJ9:48 — повторяющиеся подряд значения);
-- «12-летний цикл перерождения» AF: Matr!AH ← BG/CH-ряды;
-- «энергетический потенциал» J: сравнение по энергокривой Matr!BE59:158
-  (кусочно-линейная, опоры из ротаций цифр кода жизни; CH73←CJ72…).
+Реализовано дополнительно:
+- «судьбоносные события» Z (+/−): год в списке «судьбоносных годов» (цепочка
+  aₙ₊₁ = aₙ + Σцифр(aₙ) от года рождения; в список идут якоря-концы блоков и
+  годы-повторы, где прибавлялся 0). Matr!D ← MATCH(год, BK9:48).
+- «энергетический потенциал» J: знак(energy[A] − energy[A−2]) по энергокривой
+  (кусочно-линейная, опоры = первые 5 цифр кода жизни на возрастах 0,7,14,21,28,…).
+- опасный возраст: первый возраст ≥ текущего, где Солнце года = 0 (Matr!F8).
+
+НЕ реализован «12-летний цикл перерождения» (AF/Matr!AH ← BG/CH-ряды) — отдельно.
 """
 
 from __future__ import annotations
@@ -82,6 +85,61 @@ def personal_year(person: PersonInput, year: int) -> int:
     return reduce_1_9(person.birth_date.day + person.birth_date.month + digit_sum(year))
 
 
+def fate_years(birth_year: int, blocks: int = 10) -> set[int]:
+    """Множество «судьбоносных годов» (Matr BK9:48).
+
+    Цепочка от года рождения: к текущему значению по очереди прибавляются цифры
+    «якорного» года (год рождения, затем каждый новый якорь). Каждый 4-й шаг —
+    новый якорь (год + Σего цифр). В список идут якоря и годы-повторы (где
+    прибавляемая цифра = 0, значение не изменилось).
+    """
+    bj = birth_year
+    source = birth_year
+    fate: set[int] = set()
+    for _ in range(blocks):
+        for i, ch in enumerate(f"{source:04d}"):
+            new_bj = bj + int(ch)
+            if i == 3 or new_bj == bj:  # якорь блока или год-повтор
+                fate.add(new_bj)
+            bj = new_bj
+        source = bj
+    return fate
+
+
+def _energy_anchors(life_code: str) -> list[int]:
+    """Опоры энергокривой = первые 5 цифр кода жизни (Matr BP9:BT9 = MID(код,1..5))."""
+    return [int(c) for c in life_code[:5]]
+
+
+def _energy(age: int, anchors: list[int]) -> float:
+    """Энергопотенциал на возраст: линейная интерполяция между опорами каждые 7 лет."""
+    seg, t = divmod(age, 7)
+    lo = anchors[seg % 5]
+    hi = anchors[(seg + 1) % 5]
+    return lo + (hi - lo) * t / 7
+
+
+def energy_potential(age: int, anchors: list[int]) -> int:
+    """Тренд энергии (РАСЧЕТ J): знак(energy[A] − energy[A−2]); при равенстве —
+    1 если energy[A−1] > 4, иначе 0."""
+    diff = round(_energy(age, anchors) - _energy(age - 2, anchors), 2)
+    if diff > 0:
+        return 2
+    if diff < 0:
+        return -1
+    return 1 if _energy(age - 1, anchors) > 4 else 0
+
+
+def danger_age(person: PersonInput, reference_date: date) -> int | None:
+    """Опасный возраст: первый возраст ≥ текущего с Солнцем года = 0 (Matr!F8)."""
+    life_code = int(compute_codes(person, reference_date)["life_code"])
+    current_age = relativedelta(reference_date, person.birth_date).years
+    for age in range(current_age, 100):
+        if _moon_sun(life_code, age)[1] == 0:
+            return age
+    return None
+
+
 @dataclass(frozen=True)
 class ForecastYear:
     year: int
@@ -92,6 +150,8 @@ class ForecastYear:
     sun: int
     year_value: int  # Солнце − Луна
     year_value_text: str
+    fate: str  # судьбоносное событие: "+" / "-"
+    energy_potential: int  # тренд энергии: 2 рост / -1 спад / 1 / 0
 
     def as_dict(self) -> dict:
         return asdict(self)
@@ -105,7 +165,10 @@ def compute_forecast(person: PersonInput, reference_date: date | None = None) ->
         reference_date = datetime.now(UTC).date()
 
     current_age = relativedelta(reference_date, person.birth_date).years
-    life_code = int(compute_codes(person, reference_date)["life_code"])
+    life_code_str = compute_codes(person, reference_date)["life_code"]
+    life_code = int(life_code_str)
+    fate = fate_years(person.birth_date.year)
+    anchors = _energy_anchors(life_code_str)
 
     out: list[dict] = []
     for i in range(FORECAST_YEARS):
@@ -124,6 +187,8 @@ def compute_forecast(person: PersonInput, reference_date: date | None = None) ->
                 sun=sun,
                 year_value=value,
                 year_value_text=YEAR_VALUE_TEXT.get(value, str(value)),
+                fate="+" if year in fate else "-",
+                energy_potential=energy_potential(age, anchors),
             ).as_dict()
         )
     return out
