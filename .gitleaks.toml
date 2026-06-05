@@ -1,0 +1,15 @@
+# gitleaks config — расширяет дефолтные правила
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Шаблоны и примеры — не секреты"
+paths = [
+  '''\.env\.example$''',
+  '''README\.md$''',
+  '''docs/.*\.md$''',
+]
+regexes = [
+  '''CHANGE_ME''',
+  '''123456:CHANGE_ME''',
+]

@@ -1,0 +1,33 @@
+# Secrets — НИКОГДА не коммитить
+.env
+.env.local
+.env.*.local
+*.env.bak*
+
+# Источник истины расчётов — отдаётся заказчиком, не в git (большой бинарь)
+*.xlsx
+*.xls
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Logs
+*.log
