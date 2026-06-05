@@ -21,7 +21,12 @@ def _load(name: str) -> dict:
 
 
 @pytest.mark.parametrize(
-    "fixture", ["psychomatrix_2000_01_01.json", "psychomatrix_1994_05_28.json"]
+    "fixture",
+    [
+        "psychomatrix_2000_01_01.json",
+        "psychomatrix_1994_05_28.json",
+        "psychomatrix_1990_02_20.json",
+    ],
 )
 def test_psychomatrix_matches_excel(fixture):
     data = _load(fixture)

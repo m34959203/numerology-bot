@@ -26,10 +26,10 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass
-from datetime import date
 from functools import cache
 from pathlib import Path
 
+from core.numerology._digits import date_digits, reduce_1_9, working_numbers
 from core.numerology.person import PersonInput
 
 _DATA = Path(__file__).resolve().parent.parent / "content" / "data" / "behavior_codes.json"
@@ -40,33 +40,9 @@ def _behavior_codes() -> dict[str, str]:
     return json.loads(_DATA.read_text(encoding="utf-8"))
 
 
-def _digit_sum(n: int) -> int:
-    """Сумма цифр числа (одно сведение, как MID(..,1)+MID(..,2) в Excel)."""
-    return sum(int(c) for c in str(abs(n)))
-
-
-def _reduce_1_9(n: int) -> int:
-    """Свод к 1..9 как VLOOKUP по таблице calc!AI:AJ (= ((n-1) mod 9)+1)."""
-    return (n - 1) % 9 + 1 if n > 0 else 0
-
-
 def _repdigit(count: int, digit: int) -> int:
     """Повтор-цифра клетки: count раз цифра digit (calc!U24 и т.п.). 0 если пусто."""
     return int(str(digit) * count) if count > 0 else 0
-
-
-def _date_digits(d: date) -> list[int]:
-    """8 цифр даты (calc!D16:K16): день(2), месяц(2, добивка 0), год(4)."""
-    day = str(d.day)
-    month = str(d.month)
-    year = f"{d.year:04d}"
-    return [
-        int(day[0]),
-        int(day[1]) if len(day) == 2 else 0,
-        int(month[0]),
-        int(month[1]) if len(month) == 2 else 0,
-        *(int(c) for c in year),
-    ]
 
 
 @dataclass(frozen=True)
@@ -106,17 +82,10 @@ def compute_psychomatrix(person: PersonInput) -> dict:
     """Рассчитать психоматрицу по листу «calc». Возвращает Psychomatrix.as_dict()."""
     d = person.birth_date
 
-    # --- цифры даты и рабочие числа ---
-    dd = _date_digits(d)
-    e18 = sum(dd)
-    e19 = _digit_sum(e18)
-    first_day_digit = dd[0] if dd[0] > 0 else dd[1]
-    subtract = first_day_digit * 2
-    e20 = e18 - subtract if (e18 - subtract) >= 0 else (dd[0] - subtract) * -1
-    e21 = _digit_sum(e20)
+    # --- цифры даты, рабочие числа, пул ---
+    dd = date_digits(d)
+    e18, e19, e20, e21 = working_numbers(dd)
     working = [int(c) for c in f"{e18}{e19}{e20}{e21}"]
-
-    # --- пул цифр и клетки квадрата ---
     pool = dd + working
     c = {n: pool.count(n) for n in range(1, 10)}
 
@@ -146,7 +115,7 @@ def compute_psychomatrix(person: PersonInput) -> dict:
         temperament=c[3] + c[5] + c[7],
         soul_number=d.day,
         consciousness_level=consciousness,
-        life_path=_reduce_1_9(e19),
+        life_path=reduce_1_9(e19),
         life_code=life_code,
         behavior_code=behavior_code,
     )

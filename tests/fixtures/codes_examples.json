@@ -1,0 +1,15 @@
+{
+  "_source": "Эталоны блока «Вычисления» РАСЧЕТ (AN6..AN15) из кэша Excel, 3 примера",
+  "cases": [
+    {"birth_date":"2000-01-01","reference_date":"2025-07-27",
+     "expected":{"spiritual_level":4,"human_code":"44","lucky_numbers":"4 и 2",
+       "life_code":"200000","finance_code":"1124","full_years":25,"lived_days":9339}},
+    {"birth_date":"1994-05-28","reference_date":"2026-06-06",
+     "expected":{"spiritual_level":38,"human_code":"3811","life_code":"279160",
+       "finance_code":"1552","full_years":32}},
+    {"birth_date":"1990-02-20","reference_date":"2026-06-06",
+     "expected":{"spiritual_level":23,"human_code":"235","lucky_numbers":"5 и 10",
+       "life_code":"796000","finance_code":"2215","money_access":24,"vitality":22,
+       "life_task":11,"lived_days":13255,"full_years":36}}
+  ]
+}

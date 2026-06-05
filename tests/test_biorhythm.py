@@ -20,7 +20,14 @@ def _load(name: str) -> dict:
     return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
 
 
-@pytest.mark.parametrize("fixture", ["biorhythm_2000_01_01.json", "biorhythm_1994_05_28.json"])
+@pytest.mark.parametrize(
+    "fixture",
+    [
+        "biorhythm_2000_01_01.json",
+        "biorhythm_1994_05_28.json",
+        "biorhythm_1990_02_20.json",
+    ],
+)
 def test_biorhythm_matches_excel(fixture):
     data = _load(fixture)
     person = PersonInput("", "", None, date.fromisoformat(data["input"]["birth_date"]))

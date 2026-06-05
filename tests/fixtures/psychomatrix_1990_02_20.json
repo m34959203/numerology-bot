@@ -1,0 +1,12 @@
+{
+  "_source": "Эталон из кэша Excel, вход N9=20.02.1990 (Ерофеева Ю.В., жен.)",
+  "input": { "birth_date": "1990-02-20" },
+  "expected": {
+    "character": 111, "energy": 222, "interest": 3, "health": 0, "logic": 5,
+    "labor": 0, "luck": 0, "duty": 0, "memory": 999,
+    "self_esteem": 7, "attitude_to_labor": 1, "purposefulness": 3,
+    "family_quality": 4, "stability": 4, "temperament": 2,
+    "soul_number": 20, "consciousness_level": 41, "life_path": 5,
+    "life_code": "796000", "behavior_code": "20.02-20.03 код Праздника"
+  }
+}
