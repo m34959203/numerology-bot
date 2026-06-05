@@ -81,12 +81,11 @@ async def step_birth_date(message: Message, state: FSMContext) -> None:
     await state.update_data(birth_date=bd.isoformat())
     await state.set_state(SurveyStates.confirm)
     data = await state.get_data()
-    summary = (
-        "Проверьте данные:\n\n"
-        f"Фамилия: {data['last_name']}\n"
-        f"Имя: {data['first_name']}\n"
-        f"Отчество: {data['middle_name']}\n"
-        f"Дата рождения: {bd.strftime('%d.%m.%Y')}"
+    summary = texts.CONFIRM_TEMPLATE.format(
+        last_name=data["last_name"],
+        first_name=data["first_name"],
+        middle_name=data["middle_name"],
+        birth_date=bd.strftime("%d.%m.%Y"),
     )
     await message.answer(summary, reply_markup=keyboards.confirm_kb(), parse_mode=None)
 
@@ -132,8 +131,6 @@ async def cb_confirm(query: CallbackQuery, state: FSMContext) -> None:
     await deliver_report(query.message, report, full_name, person.birth_date)
     await state.clear()
     await query.message.answer(
-        "Готово! Ваши расчёты — в меню «Мои расчёты».",
-        reply_markup=keyboards.main_menu(),
-        parse_mode=None,
+        texts.DELIVERED, reply_markup=keyboards.to_menu_kb(), parse_mode=None
     )
     logger.info("Выдан расчёт order_id=%s", order_id)

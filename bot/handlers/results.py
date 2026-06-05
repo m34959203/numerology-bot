@@ -22,14 +22,14 @@ async def cb_results(query: CallbackQuery) -> None:
         results = await list_results(session, user.id)
     if not results:
         await query.message.edit_text(
-            texts.NO_RESULTS, reply_markup=keyboards.main_menu(), parse_mode=None
+            texts.NO_RESULTS, reply_markup=keyboards.main_menu(), parse_mode="HTML"
         )
         await query.answer()
         return
     rows = [
         [
             InlineKeyboardButton(
-                text=f"Расчёт от {r.created_at.strftime('%d.%m.%Y')}",
+                text=f"📄 Отчёт от {r.created_at.strftime('%d.%m.%Y')}",
                 callback_data=f"res:{r.id}",
             )
         ]
@@ -37,7 +37,7 @@ async def cb_results(query: CallbackQuery) -> None:
     ]
     rows.append([InlineKeyboardButton(text=texts.BTN_BACK, callback_data="menu:main")])
     await query.message.edit_text(
-        "Ваши расчёты:", reply_markup=InlineKeyboardMarkup(inline_keyboard=rows)
+        texts.RESULTS_TITLE, reply_markup=InlineKeyboardMarkup(inline_keyboard=rows)
     )
     await query.answer()
 

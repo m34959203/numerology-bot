@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from html import escape
+
 from aiogram import F, Router
 from aiogram.types import CallbackQuery, LabeledPrice
 
@@ -19,7 +21,9 @@ async def cb_services(query: CallbackQuery) -> None:
     if not services:
         await query.answer("Каталог пока пуст", show_alert=True)
         return
-    await query.message.edit_text("Выберите услугу:", reply_markup=keyboards.services_kb(services))
+    await query.message.edit_text(
+        texts.SERVICES_TITLE, reply_markup=keyboards.services_kb(services)
+    )
     await query.answer()
 
 
@@ -31,9 +35,15 @@ async def cb_service_card(query: CallbackQuery) -> None:
     if service is None or not service.is_active:
         await query.answer("Услуга недоступна", show_alert=True)
         return
-    text = f"{service.title}\n\n{service.description}\n\nЦена: {service.price_stars}⭐"
+    text = (
+        f"<b>{escape(service.title)}</b>\n\n"
+        f"{escape(service.description)}\n\n"
+        f"Цена: {service.price_stars}⭐"
+    )
     await query.message.edit_text(
-        text, reply_markup=keyboards.service_card_kb(service.id, service.price_stars)
+        text,
+        reply_markup=keyboards.service_card_kb(service.id, service.price_stars),
+        parse_mode="HTML",
     )
     await query.answer()
 

@@ -17,16 +17,20 @@ router = Router(name="start")
 async def cmd_start(message: Message) -> None:
     async with session_scope() as session:
         await get_or_create_user(session, message.from_user.id, message.from_user.full_name)
-    await message.answer(texts.START, reply_markup=keyboards.main_menu())
+    await message.answer(texts.START, reply_markup=keyboards.main_menu(), parse_mode="HTML")
 
 
 @router.callback_query(F.data == "menu:main")
 async def cb_main(query: CallbackQuery) -> None:
-    await query.message.edit_text(texts.START, reply_markup=keyboards.main_menu())
+    await query.message.edit_text(
+        texts.START, reply_markup=keyboards.main_menu(), parse_mode="HTML"
+    )
     await query.answer()
 
 
 @router.callback_query(F.data == "menu:help")
 async def cb_help(query: CallbackQuery) -> None:
-    await query.message.edit_text(texts.HELP, reply_markup=keyboards.main_menu(), parse_mode=None)
+    await query.message.edit_text(
+        texts.HELP, reply_markup=keyboards.main_menu(), parse_mode="HTML"
+    )
     await query.answer()
