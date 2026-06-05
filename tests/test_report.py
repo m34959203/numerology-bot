@@ -48,3 +48,13 @@ def test_report_calculations_and_forecast():
     assert rep["forecast"][0]["personal_year"] == 2
     assert rep["calculations"]["danger_age"] == 25
     assert rep["forecast"][0]["fate"] in ("+", "-")
+
+
+def test_report_moon_sun():
+    rep = build_report(PERSON, date(2025, 7, 27))
+    ms = rep["moon_sun"]
+    assert len(ms["monthly"]) == 12
+    assert all(m["text"] for m in ms["monthly"])
+    pn = ms["personal_numbers"]
+    assert 1 <= pn["personal_month"] <= 9
+    assert pn["combo_text"]

@@ -101,6 +101,46 @@ def _norm_key(v) -> str:
     return str(v).strip()
 
 
+def _col_values(ws, letter: str, r1: int, r2: int) -> list:
+    idx = _col_to_idx(letter)
+    rows = list(ws.iter_rows(min_row=r1, max_row=r2, min_col=idx, max_col=idx))
+    return [row[0].value for row in rows]
+
+
+def _kv_table(ws, key_col: str, text_col: str, r1: int, r2: int) -> dict:
+    keys = _col_values(ws, key_col, r1, r2)
+    texts = _col_values(ws, text_col, r1, r2)
+    table = {}
+    for k, t in zip(keys, texts, strict=True):
+        if k is None or t is None:
+            continue
+        table[_norm_key(k)] = str(t).strip()
+    return table
+
+
+def extract_moon_sun(wb, texts_dir: Path) -> None:
+    """Выгрузить тексты блока «Луна и Солнце по месяцам» и ЧПГ/ЧПМ/ЧПД.
+
+    Источники: лист «Lists луна и солнце» (G:H — код месяца J → текст) и лист «ЧПМ»
+    (N:O — ЧПМ 1–9, W:X — ЧПД 1–9, Q:R — заголовок комбо «ЧПМ − ЧПГ», T:U — текст комбо).
+    Ключ комбо использует знак U+2212 (минус), не дефис.
+    """
+    lists = wb["Lists луна и солнце"]
+    chpm = wb["ЧПМ"]
+    tables = {
+        "moon_sun_monthly": _kv_table(lists, "G", "H", 2, 40),
+        "personal_month": _kv_table(chpm, "N", "O", 2, 10),
+        "personal_day": _kv_table(chpm, "W", "X", 2, 10),
+        "personal_combo_title": _kv_table(chpm, "Q", "R", 2, 82),
+        "personal_combo_text": _kv_table(chpm, "T", "U", 2, 82),
+    }
+    for name, table in tables.items():
+        (texts_dir / f"{name}.json").write_text(
+            json.dumps(table, ensure_ascii=False, indent=1, sort_keys=True), encoding="utf-8"
+        )
+        print(f"  {name:24} ключей={len(table):3} -> {name}.json")
+
+
 def extract(src: Path, out: Path) -> None:
     import openpyxl
 
@@ -137,6 +177,8 @@ def extract(src: Path, out: Path) -> None:
         )
         registry_out[topic] = {"src": spec["src"], "multi": multi, "keys": len(table)}
         print(f"  {topic:30} ключей={len(table):3} -> {path.name}")
+
+    extract_moon_sun(wb, texts_dir)
 
     (out / "texts_registry.json").write_text(
         json.dumps(registry_out, ensure_ascii=False, indent=1, sort_keys=True), encoding="utf-8"

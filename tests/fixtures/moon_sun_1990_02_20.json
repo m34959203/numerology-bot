@@ -1,0 +1,6 @@
+{
+  "_source": "Эталон Луна/Солнце помесячно + ЧПМ из кэша Excel, N9=20.02.1990, отчёт 06.06.2026",
+  "input": { "birth_date": "1990-02-20", "reference_date": "2026-06-06" },
+  "monthly_values": [0,-7,12,-1,3,-3,0,5,0,0,9,5],
+  "personal": { "personal_year": 5, "personal_month": 2, "personal_day": 8, "combo_key": "2 − 5" }
+}
