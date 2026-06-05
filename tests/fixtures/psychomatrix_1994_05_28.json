@@ -1,0 +1,12 @@
+{
+  "_source": "Эталон из кэша Excel (заполненная книга), вход N9=28.05.1994 (Миронов Д.В.)",
+  "input": { "birth_date": "1994-05-28" },
+  "expected": {
+    "character": 111, "energy": 2, "interest": 33, "health": 44, "logic": 5,
+    "labor": 0, "luck": 7, "duty": 88, "memory": 99,
+    "self_esteem": 6, "attitude_to_labor": 3, "purposefulness": 6,
+    "family_quality": 4, "stability": 4, "temperament": 4,
+    "soul_number": 28, "consciousness_level": 56, "life_path": 2,
+    "life_code": "279160", "behavior_code": "21.05-21.06 код Мечтателя"
+  }
+}
