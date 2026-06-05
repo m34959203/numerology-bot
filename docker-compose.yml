@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-numerology}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD в .env}
+      POSTGRES_DB: ${POSTGRES_DB:-numerology}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-numerology}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  bot:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN:?задайте BOT_TOKEN в .env}
+      ADMIN_IDS: ${ADMIN_IDS:-}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-numerology}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-numerology}
+      REPORT_FORMAT: ${REPORT_FORMAT:-pdf}
+      RUN_MODE: polling
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+volumes:
+  pgdata:

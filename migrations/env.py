@@ -12,8 +12,8 @@ from core.models import Base
 
 config = context.config
 
-# Sync-драйвер для Alembic (убираем +asyncpg, если он есть).
-sync_url = settings.database_url.replace("+asyncpg", "")
+# Alembic работает синхронно: asyncpg → psycopg (psycopg3). sqlite остаётся как есть.
+sync_url = settings.database_url.replace("+asyncpg", "+psycopg")
 config.set_main_option("sqlalchemy.url", sync_url)
 
 if config.config_file_name is not None:

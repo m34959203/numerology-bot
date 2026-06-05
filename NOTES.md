@@ -2,6 +2,23 @@
 
 > Чек-поинты по ходу задачи. Продолжать отсюда.
 
+## 2026-06-06 — Деплой (Docker + Alembic) СДЕЛАНО
+
+- `Dockerfile` (multi-stage: builder ставит пакет с data-JSON в /install → slim-рантайм
+  + fonts-dejavu-core, non-root appuser, entrypoint). `docker/entrypoint.sh`:
+  `alembic upgrade head` → `python -m bot.main`. `.dockerignore`, `docker-compose.yml`
+  (postgres16 + bot, healthcheck, env из .env). `docs/deploy.md` (compose / одиночный образ /
+  миграции / бэкап / чек-лист).
+- Alembic init-миграция `migrations/versions/e47bb79859ce_init_schema.py` (все 6 таблиц).
+  env.py: asyncpg→psycopg для sync-Alembic; добавлен `psycopg[binary]` в deps. mako-шаблон
+  обновлён под современный typing. package-data в pyproject (JSON-трактовки в wheel).
+- **Образ собран и проверен в контейнере:** миграции применяются, PDF генерится (73КБ),
+  импорты+данные+шрифт DejaVu на месте, 6 роутеров. Образ ~353МБ. 32 теста зелёные.
+
+**Проект готов к боевому запуску.** От заказчика нужно: BOT_TOKEN, сервер с Docker,
+заполнить .env (BOT_TOKEN/ADMIN_IDS/POSTGRES_PASSWORD), `docker compose up -d --build`.
+Открыто по расчётам (не блокирует): число/карма имени (ФИО-эталоны), 2-е кармособытие (BG20-баг).
+
 ## 2026-06-06 — Этап 6: PDF-выдача (СДЕЛАНО)
 
 `core/pdf.py` (reportlab): PDF-отчёт с кириллицей (DejaVuSans, поиск по системным путям
