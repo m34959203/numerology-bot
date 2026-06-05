@@ -19,7 +19,8 @@
   (кусочно-линейная, опоры = первые 5 цифр кода жизни на возрастах 0,7,14,21,28,…).
 - опасный возраст: первый возраст ≥ текущего, где Солнце года = 0 (Matr!F8).
 
-НЕ реализован «12-летний цикл перерождения» (AF/Matr!AH ← BG/CH-ряды) — отдельно.
+- «12-летний цикл перерождения» AF/Matr!AH: те же первые 5 цифр кода жизни, но шаг
+  каждые 12 лет — AH(возраст) = digits5[(возраст//12) % 5]; текст показывается при Z="+".
 """
 
 from __future__ import annotations
@@ -46,6 +47,20 @@ PERSONAL_YEAR_TEXT = {
     7: "год духовных поисков",
     8: "год проверки на честность",
     9: "завершающий год",
+}
+
+# 12-летний цикл перерождения (Matr!AH 0..9) → текст (РАСЧЕТ AF-колонка).
+REBIRTH_CYCLE_TEXT = {
+    0: "0 - максимальное зло, как по времени, так и по силе",
+    1: "1 - добро минимально, как по времени, так и по силе",
+    2: "2 - зло минимально, как по времени, так и по силе",
+    3: "3 - добро минимально по силе, но довольно продолжительно",
+    4: "4 - зло минимально по силе, но средняя продолжительность",
+    5: "5 - кратковременное добро с максимальной силой (шок)",
+    6: "6 - кратковременное зло с максимальной силой (шок)",
+    7: "7 - слабое добро но довольно продолжительное (радость)",
+    8: "8 - слабое зло, но довольно продолжительное",
+    9: "9 - максимальное добро как по времени так и по силе",
 }
 
 # «Год на + или −» (Солнце−Луна) → текст (РАСЧЕТ BO-колонка). Вне диапазона — само число.
@@ -130,6 +145,11 @@ def energy_potential(age: int, anchors: list[int]) -> int:
     return 1 if _energy(age - 1, anchors) > 4 else 0
 
 
+def rebirth_cycle(age: int, anchors: list[int]) -> int:
+    """12-летний цикл перерождения (Matr!AH): цифра кода жизни по блоку из 12 лет."""
+    return anchors[(age // 12) % 5]
+
+
 def danger_age(person: PersonInput, reference_date: date) -> int | None:
     """Опасный возраст: первый возраст ≥ текущего с Солнцем года = 0 (Matr!F8)."""
     life_code = int(compute_codes(person, reference_date)["life_code"])
@@ -152,6 +172,8 @@ class ForecastYear:
     year_value_text: str
     fate: str  # судьбоносное событие: "+" / "-"
     energy_potential: int  # тренд энергии: 2 рост / -1 спад / 1 / 0
+    rebirth_cycle: int  # 12-летний цикл перерождения (0..9)
+    rebirth_cycle_text: str  # текст цикла; пусто, если fate != "+"
 
     def as_dict(self) -> dict:
         return asdict(self)
@@ -177,6 +199,8 @@ def compute_forecast(person: PersonInput, reference_date: date | None = None) ->
         moon, sun = _moon_sun(life_code, age)
         value = sun - moon
         py = personal_year(person, year)
+        is_fateful = year in fate
+        cycle = rebirth_cycle(age, anchors)
         out.append(
             ForecastYear(
                 year=year,
@@ -187,8 +211,10 @@ def compute_forecast(person: PersonInput, reference_date: date | None = None) ->
                 sun=sun,
                 year_value=value,
                 year_value_text=YEAR_VALUE_TEXT.get(value, str(value)),
-                fate="+" if year in fate else "-",
+                fate="+" if is_fateful else "-",
                 energy_potential=energy_potential(age, anchors),
+                rebirth_cycle=cycle,
+                rebirth_cycle_text=REBIRTH_CYCLE_TEXT.get(cycle, "") if is_fateful else "",
             ).as_dict()
         )
     return out

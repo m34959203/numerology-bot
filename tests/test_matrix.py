@@ -34,3 +34,19 @@ def test_fate_years_contains_anchor():
 
     # цепочка от 1990: первый якорь 1990+Σцифр=2009
     assert 2009 in fate_years(1990)
+
+
+def test_rebirth_cycle_matches_bg_column():
+    """AH(возраст) по колонке Matr!BG для кода жизни 796000 (digits5=[7,9,6,0,0])."""
+    from core.numerology.matrix import rebirth_cycle
+
+    anchors = [7, 9, 6, 0, 0]
+    # блоки по 12 лет: age0-11→7, 12-23→9, 24-35→6, 36-47→0
+    for age in range(0, 12):
+        assert rebirth_cycle(age, anchors) == 7
+    for age in range(12, 24):
+        assert rebirth_cycle(age, anchors) == 9
+    for age in range(24, 36):
+        assert rebirth_cycle(age, anchors) == 6
+    for age in range(36, 48):
+        assert rebirth_cycle(age, anchors) == 0

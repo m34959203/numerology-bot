@@ -15,7 +15,9 @@
       "year_value_text": "потеря отношений с близкими людьми",
       "personal_year_text": "год изменений",
       "fate": "+",
-      "energy_potential": 2
+      "energy_potential": 2,
+      "rebirth_cycle": 0,
+      "rebirth_cycle_text": "0 - максимальное зло, как по времени, так и по силе"
     },
     {
       "year": 2027,
@@ -27,7 +29,9 @@
       "year_value_text": "удачный год, лотерея",
       "personal_year_text": "год семьи",
       "fate": "-",
-      "energy_potential": 2
+      "energy_potential": 2,
+      "rebirth_cycle": 0,
+      "rebirth_cycle_text": ""
     },
     {
       "year": 2028,
@@ -39,7 +43,9 @@
       "year_value_text": "11",
       "personal_year_text": "год духовных поисков",
       "fate": "-",
-      "energy_potential": 2
+      "energy_potential": 2,
+      "rebirth_cycle": 0,
+      "rebirth_cycle_text": ""
     },
     {
       "year": 2029,
@@ -51,7 +57,9 @@
       "year_value_text": "удачный год, лотерея",
       "personal_year_text": "год проверки на честность",
       "fate": "-",
-      "energy_potential": 2
+      "energy_potential": 2,
+      "rebirth_cycle": 0,
+      "rebirth_cycle_text": ""
     },
     {
       "year": 2030,
@@ -63,7 +71,9 @@
       "year_value_text": "незначительный спад",
       "personal_year_text": "завершающий год",
       "fate": "-",
-      "energy_potential": 2
+      "energy_potential": 2,
+      "rebirth_cycle": 0,
+      "rebirth_cycle_text": ""
     }
   ]
 }
