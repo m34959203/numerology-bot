@@ -15,8 +15,10 @@ from datetime import date
 from core.content.loader import interpret
 from core.numerology.biorhythm import compute_biorhythm
 from core.numerology.codes import compute_codes
+from core.numerology.karma_events import compute_karma_events
 from core.numerology.matrix import compute_forecast, danger_age
 from core.numerology.moon_sun import compute_monthly_moon_sun, compute_personal_numbers
+from core.numerology.name import compute_name_numbers
 from core.numerology.person import PersonInput
 from core.numerology.psychomatrix import compute_psychomatrix
 
@@ -126,13 +128,13 @@ def build_moon_sun_section(person: PersonInput, reference_date: date | None = No
 
 
 def build_report(person: PersonInput, reference_date: date | None = None) -> dict:
-    """Собрать доступную часть отчёта.
-
-    Не вошли: число/карма имени (нужны ФИО-эталоны) и 12-летний цикл уже учтён в
-    прогнозе. Кармические события (BG17/BG20) — отдельно (баг книги в BG20)."""
+    """Собрать отчёт. 12-летний цикл учтён в прогнозе. Кармические события
+    (BG17/BG20) требуют дат родителей — без них секции пустые (как в книге)."""
     return {
         "calculations": build_calculations_section(person, reference_date),
         "psychomatrix": build_psychomatrix_section(person),
+        "name": compute_name_numbers(person),
+        "karma_events": compute_karma_events(person),
         "days": build_biorhythm_section(person, reference_date),
         "forecast": build_forecast_section(person, reference_date),
         "moon_sun": build_moon_sun_section(person, reference_date),

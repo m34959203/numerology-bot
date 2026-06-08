@@ -75,6 +75,22 @@ def render_report(report: dict, full_name: str, birth_date: date | None) -> str:
         if text:
             L.append(f"• {lbl} ({_val(q[lbl]['value'])}): {text}")
 
+    nm = report["name"]
+    name_parts = [
+        f"{label}: {nm[key]}"
+        for key, label in (
+            ("last_name", "Фамилия"),
+            ("first_name", "Имя"),
+            ("middle_name", "Отчество"),
+            ("maiden_name", "Девичья"),
+        )
+        if nm[key]
+    ]
+    if name_parts:
+        flag = "есть" if nm["has_karma"] else "нет"
+        L.append("\n🔤 ЧИСЛО И КАРМА ИМЕНИ")
+        L.append(" · ".join(name_parts) + f"\nКарма имени: {nm['karma']} — {flag}")
+
     L.append("\n📅 БЛАГОПРИЯТНЫЕ / КРИТИЧЕСКИЕ / ТРАВМООПАСНЫЕ ДНИ")
     L.append(
         f"Благоприятные: {', '.join(_fmt_dates(days['favorable']))}\n"
@@ -95,6 +111,11 @@ def render_report(report: dict, full_name: str, birth_date: date | None) -> str:
             f"Луна {f['moon']} / Солнце {f['sun']}; "
             f"год {sign}{f['year_value']} — {f['year_value_text']}; судьбоносный: {f['fate']}{cyc}"
         )
+
+    events = [e for e in (report["karma_events"]["first"], report["karma_events"]["second"]) if e]
+    if events:
+        L.append("\n⚖️ КАРМИЧЕСКИЕ СОБЫТИЯ")
+        L.extend(f"• {e['text']}" for e in events)
 
     L.append("\n🌙 ЛУНА И СОЛНЦЕ ПО МЕСЯЦАМ")
     L.append("\n".join(f"{m['month_name']}: {m['text']}" for m in ms["monthly"]))

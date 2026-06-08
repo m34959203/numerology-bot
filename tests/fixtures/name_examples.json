@@ -1,0 +1,61 @@
+{
+  "note": "Число/карма имени (лист Matr, D3–D7). Первый кейс — кэш книги (9 сверенных ячеек, авторитет). Контроль с пустым отчеством и 5 демо с буквами Ё/Й/Ъ/Ь — сверены с воспроизведённым по книге движком (LibreOffice) и ручной транслитерацией. has_karma — канонический флаг (баг E7/AN17 в книге обойдён).",
+  "cases": [
+    {
+      "label": "эталон книги (кэш Matr, отчество заполнено)",
+      "last_name": "ЕРОФЕЕВА",
+      "first_name": "ЮЛИЯ",
+      "middle_name": "ВЛАДИМИРОВНА",
+      "maiden_name": "МИРОНОВА",
+      "expected": {"last_name": 6, "first_name": 7, "middle_name": 1, "maiden_name": 3, "karma": 14, "has_karma": true}
+    },
+    {
+      "label": "контроль: отчество пусто (D7=13)",
+      "last_name": "ЕРОФЕЕВА",
+      "first_name": "ЮЛИЯ",
+      "middle_name": null,
+      "maiden_name": "МИРОНОВА",
+      "expected": {"last_name": 6, "first_name": 7, "middle_name": 0, "maiden_name": 3, "karma": 13, "has_karma": true}
+    },
+    {
+      "label": "демо1 Ё/Й",
+      "last_name": "ЁЛКИНА",
+      "first_name": "АЙГУЛЬ",
+      "middle_name": "ЙОСИФОВНА",
+      "maiden_name": "ЁЛКИНА",
+      "expected": {"last_name": 4, "first_name": 8, "middle_name": 5, "maiden_name": 4, "karma": 17, "has_karma": false}
+    },
+    {
+      "label": "демо2 Ъ/Ь (карма 19)",
+      "last_name": "ОБЪЕДКОВ",
+      "first_name": "ИЛЬЯ",
+      "middle_name": "СЕРГЕЕВИЧ",
+      "maiden_name": "ПОДЪЯЧЕВ",
+      "expected": {"last_name": 7, "first_name": 5, "middle_name": 7, "maiden_name": 7, "karma": 19, "has_karma": true}
+    },
+    {
+      "label": "демо3 Ё/Й/Ь",
+      "last_name": "СОЛОВЬЁВ",
+      "first_name": "МАТВЕЙ",
+      "middle_name": "ИГОРЕВИЧ",
+      "maiden_name": "СОЛОВЬЁВ",
+      "expected": {"last_name": 8, "first_name": 1, "middle_name": 2, "maiden_name": 8, "karma": 11, "has_karma": false}
+    },
+    {
+      "label": "демо4 Ё/Й/Ь",
+      "last_name": "ДЁМИНА",
+      "first_name": "ТАТЬЯНА",
+      "middle_name": "ЙОСИФОВНА",
+      "maiden_name": "ДЁМИНА",
+      "expected": {"last_name": 7, "first_name": 3, "middle_name": 5, "maiden_name": 7, "karma": 15, "has_karma": false}
+    },
+    {
+      "label": "демо5 Ъ/Ь/Й",
+      "last_name": "ПОДЪЯЧЕНКО",
+      "first_name": "ЮЛИЙ",
+      "middle_name": "ЛЬВОВИЧ",
+      "maiden_name": "ПОДЪЯЧЕНКО",
+      "expected": {"last_name": 2, "first_name": 3, "middle_name": 1, "maiden_name": 2, "karma": 6, "has_karma": false}
+    }
+  ]
+}
