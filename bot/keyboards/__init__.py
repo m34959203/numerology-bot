@@ -60,3 +60,21 @@ def to_menu_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[[InlineKeyboardButton(text=texts.BTN_TO_MENU, callback_data="menu:main")]]
     )
+
+
+def gender_kb() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="Женский", callback_data="survey:gender:f"),
+                InlineKeyboardButton(text="Мужской", callback_data="survey:gender:m"),
+            ]
+        ]
+    )
+
+
+def skip_kb() -> InlineKeyboardMarkup:
+    """Кнопка «Пропустить» для опциональных шагов (родители, девичья фамилия)."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[[InlineKeyboardButton(text="Пропустить", callback_data="survey:skip")]]
+    )
