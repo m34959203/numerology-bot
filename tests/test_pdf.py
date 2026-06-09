@@ -10,10 +10,10 @@ from core.numerology.report import build_report
 
 def test_build_report_pdf():
     pytest.importorskip("reportlab")
-    from core.pdf import _FONT_CANDIDATES, _find_font, build_report_pdf
+    from core.pdf import build_report_pdf, fonts_available
 
-    if _find_font(_FONT_CANDIDATES) is None:
-        pytest.skip("нет кириллического TTF-шрифта (fonts-dejavu-core)")
+    if not fonts_available():
+        pytest.skip("нет кириллического TTF-шрифта (бандл PT или fonts-dejavu-core)")
 
     p = PersonInput("Ерофеева", "Юлия", "Владимировна", date(1990, 2, 20))
     report = build_report(p, date(2026, 6, 6))

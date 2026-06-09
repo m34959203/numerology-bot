@@ -19,7 +19,7 @@ from bot.delivery import deliver_report
 from bot.states.survey import SurveyStates
 from core.db import session_scope
 from core.numerology import PersonInput
-from core.numerology.report import build_report
+from core.numerology.tariffs import report_for
 from core.repositories import save_result, save_survey
 from core.validators import ValidationError, parse_birth_date, validate_name
 
@@ -93,7 +93,9 @@ async def step_birth_date(message: Message, state: FSMContext) -> None:
 @router.callback_query(SurveyStates.confirm, F.data == "survey:restart")
 async def cb_restart(query: CallbackQuery, state: FSMContext) -> None:
     data = await state.get_data()
-    keep = {k: data[k] for k in ("order_id", "charge_id", "service_title") if k in data}
+    keep = {
+        k: data[k] for k in ("order_id", "charge_id", "service_code", "service_title") if k in data
+    }
     await state.set_state(SurveyStates.last_name)
     await state.set_data(keep)
     await query.message.answer(texts.ASK_LAST_NAME)
@@ -113,7 +115,7 @@ async def cb_confirm(query: CallbackQuery, state: FSMContext) -> None:
         birth_date=date.fromisoformat(data["birth_date"]),
     )
     reference = datetime.now(UTC).date()
-    report = build_report(person, reference)
+    report = report_for(person, reference, data.get("service_code"))
     full_name = f"{person.last_name} {person.first_name} {person.middle_name}"
 
     async with session_scope() as session:

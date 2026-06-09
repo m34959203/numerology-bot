@@ -76,10 +76,15 @@ async def cb_pay(query: CallbackQuery, state: FSMContext) -> None:
             return
         user = await get_or_create_user(session, query.from_user.id, query.from_user.full_name)
         order = await create_order(session, user.id, service.id)
-        order_id, title, price_tenge = order.id, service.title, service.price_tenge
+        order_id, code, title, price_tenge = (
+            order.id,
+            service.code,
+            service.title,
+            service.price_tenge,
+        )
 
     if settings.payment_imitation:
-        await _imitate_payment(query, state, order_id, title, price_tenge)
+        await _imitate_payment(query, state, order_id, code, title, price_tenge)
         return
 
     # Боевой режим: Telegram Stars (currency XTR, provider_token пустой). payload = order_id.
@@ -94,7 +99,12 @@ async def cb_pay(query: CallbackQuery, state: FSMContext) -> None:
 
 
 async def _imitate_payment(
-    query: CallbackQuery, state: FSMContext, order_id: int, title: str, price_tenge: int
+    query: CallbackQuery,
+    state: FSMContext,
+    order_id: int,
+    code: str,
+    title: str,
+    price_tenge: int,
 ) -> None:
     """Имитация успешной оплаты: помечаем заказ оплаченным и запускаем анкету.
 
@@ -113,7 +123,9 @@ async def _imitate_payment(
 
     logger.info("ИМИТАЦИЯ оплаты order_id=%s charge_id=%s", order_id, charge_id)
     await state.set_state(SurveyStates.last_name)
-    await state.update_data(order_id=order_id, charge_id=charge_id, service_title=title)
+    await state.update_data(
+        order_id=order_id, charge_id=charge_id, service_code=code, service_title=title
+    )
     await query.message.answer(texts.PAY_SUCCESS_IMITATION)
     await query.message.answer(texts.ASK_LAST_NAME)
     await query.answer()

@@ -36,6 +36,7 @@ include = ["bot*", "core*"]
 
 [tool.setuptools.package-data]
 "core.content" = ["data/*.json", "data/texts/*.json"]
+"core" = ["assets/fonts/*.ttf"]
 
 [tool.ruff]
 line-length = 100
