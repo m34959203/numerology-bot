@@ -31,7 +31,10 @@ class Service(Base):
     code: Mapped[str] = mapped_column(String(64), unique=True)
     title: Mapped[str] = mapped_column(String(255))
     description: Mapped[str] = mapped_column(Text)
-    price_stars: Mapped[int] = mapped_column(Integer)
+    # Цена в тенге — основная валюта прайса. price_stars оставлен для будущей
+    # оплаты через Telegram Stars (сейчас отключена, см. settings.payment_imitation).
+    price_tenge: Mapped[int] = mapped_column(Integer, default=0)
+    price_stars: Mapped[int] = mapped_column(Integer, default=0)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
