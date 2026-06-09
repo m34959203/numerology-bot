@@ -5,6 +5,7 @@ from __future__ import annotations
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from bot import texts
+from bot.catalog_data import format_price
 
 
 def main_menu() -> InlineKeyboardMarkup:
@@ -21,19 +22,24 @@ def main_menu() -> InlineKeyboardMarkup:
 
 def services_kb(services) -> InlineKeyboardMarkup:
     rows = [
-        [InlineKeyboardButton(text=f"{s.title} · {s.price_stars}⭐", callback_data=f"svc:{s.id}")]
+        [
+            InlineKeyboardButton(
+                text=f"{s.title} · {format_price(s.price_tenge)}", callback_data=f"svc:{s.id}"
+            )
+        ]
         for s in services
     ]
     rows.append([InlineKeyboardButton(text=texts.BTN_BACK, callback_data="menu:main")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def service_card_kb(service_id: int, price_stars: int) -> InlineKeyboardMarkup:
+def service_card_kb(service_id: int, price_tenge: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text=f"{texts.BTN_PAY} · {price_stars}⭐", callback_data=f"pay:{service_id}"
+                    text=f"{texts.BTN_PAY} · {format_price(price_tenge)}",
+                    callback_data=f"pay:{service_id}",
                 )
             ],
             [InlineKeyboardButton(text=texts.BTN_BACK, callback_data="menu:services")],

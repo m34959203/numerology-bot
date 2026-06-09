@@ -108,11 +108,27 @@ async def mark_refunded(session: AsyncSession, charge_id: str) -> bool:
 
 
 async def seed_services(session: AsyncSession, services: list[dict]) -> int:
-    """Создать услуги, которых ещё нет (по code). Возвращает число добавленных."""
+    """Синхронизировать каталог с переданным списком (по code).
+
+    Существующие услуги обновляются (title/description/цены, is_active=True),
+    отсутствующие в списке — деактивируются (is_active=False), новые — создаются.
+    Возвращает число добавленных.
+    """
     added = 0
+    wanted_codes = {spec["code"] for spec in services}
     for spec in services:
-        exists = await session.scalar(select(Service.id).where(Service.code == spec["code"]))
-        if exists is None:
+        service = await session.scalar(select(Service).where(Service.code == spec["code"]))
+        if service is None:
             session.add(Service(**spec, is_active=True))
             added += 1
+        else:
+            for field, value in spec.items():
+                setattr(service, field, value)
+            service.is_active = True
+    # Услуги вне нового каталога убираем из выдачи (не удаляем — ради истории заказов).
+    stale = await session.scalars(
+        select(Service).where(Service.is_active.is_(True), Service.code.not_in(wanted_codes))
+    )
+    for service in stale:
+        service.is_active = False
     return added

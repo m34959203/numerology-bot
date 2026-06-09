@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     # Путь к TTF-шрифту с кириллицей для PDF. Пусто → поиск по системным путям.
     pdf_font_path: str = ""
 
+    # Имитация оплаты для тестирования функционала: оплата через Telegram Stars
+    # отключена, бот сразу выдаёт услугу как будто платёж прошёл. Вернуть к боевой
+    # оплате — выставить PAYMENT_IMITATION=false в .env.
+    payment_imitation: bool = True
+
     run_mode: str = "polling"  # polling | webhook
     webhook_base_url: str = ""
     webhook_path: str = "/webhook"
