@@ -109,102 +109,141 @@ def build_report_pdf(report: dict, full_name: str, birth_date: date | None) -> b
     """Собрать PDF-отчёт из структуры build_report. Возвращает bytes."""
     _ensure_fonts()
     s = _styles()
-    c = report["calculations"]
-    pm = report["psychomatrix"]
-    days = report["days"]
-    fc = report["forecast"]
-    ms = report["moon_sun"]
-    pn = ms["personal_numbers"]
-    q = {row["label"]: row for row in pm["qualities"]}
-    sc = {row["label"]: row for row in pm["scalars"]}
 
     flow = []
     born = f", р. {birth_date.strftime('%d.%m.%Y')}" if birth_date else ""
     flow.append(Paragraph("Нумерологическая матрица", s["title"]))
     flow.append(Paragraph(_e(f"{full_name}{born}"), s["sub"]))
 
-    danger = c["danger_age"] if c["danger_age"] is not None else "нет"
-    flow.append(Paragraph("Исходные данные и вычисления", s["h"]))
-    flow.append(
-        Paragraph(
-            f"Полных лет: {c['full_years']} · Прожито дней: {c['lived_days']} · "
-            f"Жизнь: {c['life_task']} · Духовный уровень: {c['spiritual_level']}<br/>"
-            f"Код человека: {_e(c['human_code'])} · Код жизни: {_e(c['life_code'])} · "
-            f"Финансовый код: {_e(c['finance_code'])} · "
-            f"Счастливые числа: {_e(c['lucky_numbers'])}<br/>"
-            f"Доступ к деньгам: {c['money_access']} · Жизненные силы: {c['vitality']} · "
-            f"Опасный возраст: {danger}",
-            s["p"],
-        )
-    )
-
-    flow.append(Paragraph("Психоматрица", s["h"]))
-    grid = " · ".join(f"{_e(lbl)}: {_val(q[lbl]['value'])}" for lbl in _PSYCHO_ORDER)
-    flow.append(Paragraph(grid, s["p"]))
-    flow.append(
-        Paragraph(
-            f"Число души: {sc['Число души']['value']} · "
-            f"ЧЖП: {sc['Число жизненного пути (ЧЖП)']['value']} · "
-            f"Уровень сознания: {sc['Уровень сознания']['value']} · "
-            f"Код поведения: {_e(sc['Код поведения']['value'])}",
-            s["small"],
-        )
-    )
-    flow.append(Spacer(1, 4))
-    for lbl in _PSYCHO_ORDER:
-        text = q[lbl]["text"]
-        if text:
-            flow.append(
-                Paragraph(f"<b>{_e(lbl)}</b> ({_val(q[lbl]['value'])}): {_e(text)}", s["p"])
-            )
-
-    flow.append(Paragraph("Благоприятные / критические / травмоопасные дни", s["h"]))
-    flow.append(
-        Paragraph(
-            f"Благоприятные: {', '.join(_fmt_dates(days['favorable']))}<br/>"
-            f"Критические: {', '.join(_fmt_dates(days['critical'])) or '—'}<br/>"
-            f"Травмоопасные: {', '.join(_fmt_dates(days['traumatic']))}",
-            s["p"],
-        )
-    )
-
-    flow.append(Paragraph("Прогноз на 5 лет", s["h"]))
-    for f in fc:
-        cyc = (
-            f"; 12-цикл: {_e(f['rebirth_cycle_text'])}"
-            if f["fate"] == "+" and f["rebirth_cycle_text"]
-            else ""
-        )
-        sign = "+" if f["year_value"] >= 0 else ""
+    # Рендерим только присутствующие секции — состав зависит от тарифа
+    # (см. core.numerology.tariffs).
+    if "calculations" in report:
+        c = report["calculations"]
+        danger = c["danger_age"] if c["danger_age"] is not None else "нет"
+        flow.append(Paragraph("Исходные данные и вычисления", s["h"]))
         flow.append(
             Paragraph(
-                f"<b>{f['year']} (возраст {f['age']})</b>: {f['personal_year']} — "
-                f"{_e(f['personal_year_text'])}; Луна {f['moon']} / Солнце {f['sun']}; "
-                f"год {sign}{f['year_value']} — {_e(f['year_value_text'])}; "
-                f"судьбоносный: {f['fate']}{cyc}",
+                f"Полных лет: {c['full_years']} · Прожито дней: {c['lived_days']} · "
+                f"Жизнь: {c['life_task']} · Духовный уровень: {c['spiritual_level']}<br/>"
+                f"Код человека: {_e(c['human_code'])} · Код жизни: {_e(c['life_code'])} · "
+                f"Финансовый код: {_e(c['finance_code'])} · "
+                f"Счастливые числа: {_e(c['lucky_numbers'])}<br/>"
+                f"Доступ к деньгам: {c['money_access']} · Жизненные силы: {c['vitality']} · "
+                f"Опасный возраст: {danger}",
                 s["p"],
             )
         )
 
-    flow.append(Paragraph("Луна и Солнце по месяцам", s["h"]))
-    for m in ms["monthly"]:
-        flow.append(Paragraph(f"<b>{_e(m['month_name'])}</b>: {_e(m['text'])}", s["p"]))
-
-    flow.append(Paragraph("Личные числа (на дату отчёта)", s["h"]))
-    flow.append(
-        Paragraph(
-            f"Год: {pn['personal_year']} · Месяц: {pn['personal_month']} · "
-            f"День: {pn['personal_day']}",
-            s["p"],
+    if "psychomatrix" in report:
+        pm = report["psychomatrix"]
+        q = {row["label"]: row for row in pm["qualities"]}
+        sc = {row["label"]: row for row in pm["scalars"]}
+        flow.append(Paragraph("Психоматрица", s["h"]))
+        grid = " · ".join(f"{_e(lbl)}: {_val(q[lbl]['value'])}" for lbl in _PSYCHO_ORDER)
+        flow.append(Paragraph(grid, s["p"]))
+        flow.append(
+            Paragraph(
+                f"Число души: {sc['Число души']['value']} · "
+                f"ЧЖП: {sc['Число жизненного пути (ЧЖП)']['value']} · "
+                f"Уровень сознания: {sc['Уровень сознания']['value']} · "
+                f"Код поведения: {_e(sc['Код поведения']['value'])}",
+                s["small"],
+            )
         )
-    )
-    if pn["combo_title"]:
-        flow.append(Paragraph(f"<b>{_e(pn['combo_title'])}</b>", s["p"]))
-        flow.append(Paragraph(_e(pn["combo_text"]), s["p"]))
-    if pn["personal_month_text"]:
-        flow.append(Paragraph(f"Месяц: {_e(pn['personal_month_text'])}", s["p"]))
-    if pn["personal_day_text"]:
-        flow.append(Paragraph(f"День: {_e(pn['personal_day_text'])}", s["p"]))
+        flow.append(Spacer(1, 4))
+        for lbl in _PSYCHO_ORDER:
+            text = q[lbl]["text"]
+            if text:
+                flow.append(
+                    Paragraph(f"<b>{_e(lbl)}</b> ({_val(q[lbl]['value'])}): {_e(text)}", s["p"])
+                )
+
+    if "name" in report:
+        nm = report["name"]
+        name_parts = [
+            f"{label}: {_e(nm[key])}"
+            for key, label in (
+                ("last_name", "Фамилия"),
+                ("first_name", "Имя"),
+                ("middle_name", "Отчество"),
+                ("maiden_name", "Девичья"),
+            )
+            if nm[key]
+        ]
+        if name_parts:
+            flag = "есть" if nm["has_karma"] else "нет"
+            flow.append(Paragraph("Число и карма имени", s["h"]))
+            flow.append(
+                Paragraph(
+                    " · ".join(name_parts) + f"<br/>Карма имени: {nm['karma']} — {flag}", s["p"]
+                )
+            )
+
+    if "karma_events" in report:
+        events = [
+            e for e in (report["karma_events"]["first"], report["karma_events"]["second"]) if e
+        ]
+        if events:
+            flow.append(Paragraph("Кармические события", s["h"]))
+            for e in events:
+                flow.append(Paragraph(_e(e["text"]), s["p"]))
+
+    if "days" in report:
+        days = report["days"]
+        flow.append(Paragraph("Благоприятные / критические / травмоопасные дни", s["h"]))
+        flow.append(
+            Paragraph(
+                f"Благоприятные: {', '.join(_fmt_dates(days['favorable']))}<br/>"
+                f"Критические: {', '.join(_fmt_dates(days['critical'])) or '—'}<br/>"
+                f"Травмоопасные: {', '.join(_fmt_dates(days['traumatic']))}",
+                s["p"],
+            )
+        )
+
+    if "forecast" in report:
+        fc = report["forecast"]
+        flow.append(
+            Paragraph("Прогноз на год" if len(fc) == 1 else f"Прогноз на {len(fc)} лет", s["h"])
+        )
+        for f in fc:
+            cyc = (
+                f"; 12-цикл: {_e(f['rebirth_cycle_text'])}"
+                if f["fate"] == "+" and f["rebirth_cycle_text"]
+                else ""
+            )
+            sign = "+" if f["year_value"] >= 0 else ""
+            flow.append(
+                Paragraph(
+                    f"<b>{f['year']} (возраст {f['age']})</b>: {f['personal_year']} — "
+                    f"{_e(f['personal_year_text'])}; Луна {f['moon']} / Солнце {f['sun']}; "
+                    f"год {sign}{f['year_value']} — {_e(f['year_value_text'])}; "
+                    f"судьбоносный: {f['fate']}{cyc}",
+                    s["p"],
+                )
+            )
+
+    if "moon_sun" in report:
+        ms = report["moon_sun"]
+        pn = ms["personal_numbers"]
+        flow.append(Paragraph("Луна и Солнце по месяцам", s["h"]))
+        for m in ms["monthly"]:
+            flow.append(Paragraph(f"<b>{_e(m['month_name'])}</b>: {_e(m['text'])}", s["p"]))
+
+        flow.append(Paragraph("Личные числа (на дату отчёта)", s["h"]))
+        flow.append(
+            Paragraph(
+                f"Год: {pn['personal_year']} · Месяц: {pn['personal_month']} · "
+                f"День: {pn['personal_day']}",
+                s["p"],
+            )
+        )
+        if pn["combo_title"]:
+            flow.append(Paragraph(f"<b>{_e(pn['combo_title'])}</b>", s["p"]))
+            flow.append(Paragraph(_e(pn["combo_text"]), s["p"]))
+        if pn["personal_month_text"]:
+            flow.append(Paragraph(f"Месяц: {_e(pn['personal_month_text'])}", s["p"]))
+        if pn["personal_day_text"]:
+            flow.append(Paragraph(f"День: {_e(pn['personal_day_text'])}", s["p"]))
 
     buf = BytesIO()
     doc = SimpleDocTemplate(

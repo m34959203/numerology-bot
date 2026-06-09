@@ -58,6 +58,7 @@ async def on_successful_payment(message: Message, state: FSMContext) -> None:
     await state.update_data(
         order_id=order_id,
         charge_id=charge_id,
+        service_code=service.code if service else "",
         service_title=service.title if service else "",
     )
     await message.answer(texts.PAY_SUCCESS)

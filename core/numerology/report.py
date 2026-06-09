@@ -127,15 +127,47 @@ def build_moon_sun_section(person: PersonInput, reference_date: date | None = No
     }
 
 
-def build_report(person: PersonInput, reference_date: date | None = None) -> dict:
+# Все секции отчёта в каноническом порядке (порядок рендера).
+ALL_SECTIONS: tuple[str, ...] = (
+    "calculations",
+    "psychomatrix",
+    "name",
+    "karma_events",
+    "days",
+    "forecast",
+    "moon_sun",
+)
+
+
+def build_report(
+    person: PersonInput,
+    reference_date: date | None = None,
+    *,
+    sections: set[str] | None = None,
+    forecast_years: int = 5,
+) -> dict:
     """Собрать отчёт. 12-летний цикл учтён в прогнозе. Кармические события
-    (BG17/BG20) требуют дат родителей — без них секции пустые (как в книге)."""
-    return {
-        "calculations": build_calculations_section(person, reference_date),
-        "psychomatrix": build_psychomatrix_section(person),
-        "name": compute_name_numbers(person),
-        "karma_events": compute_karma_events(person),
-        "days": build_biorhythm_section(person, reference_date),
-        "forecast": build_forecast_section(person, reference_date),
-        "moon_sun": build_moon_sun_section(person, reference_date),
-    }
+    (BG17/BG20) требуют дат родителей — без них секции пустые (как в книге).
+
+    sections — какие блоки включить (по умолчанию все; используется для
+    дифференциации тарифов, см. core.numerology.tariffs). forecast_years
+    ограничивает «Прогноз на N лет» (0 не урезает; книга считает 5).
+    """
+    want = (lambda key: True) if sections is None else (sections.__contains__)
+    report: dict = {}
+    if want("calculations"):
+        report["calculations"] = build_calculations_section(person, reference_date)
+    if want("psychomatrix"):
+        report["psychomatrix"] = build_psychomatrix_section(person)
+    if want("name"):
+        report["name"] = compute_name_numbers(person)
+    if want("karma_events"):
+        report["karma_events"] = compute_karma_events(person)
+    if want("days"):
+        report["days"] = build_biorhythm_section(person, reference_date)
+    if want("forecast"):
+        forecast = build_forecast_section(person, reference_date)
+        report["forecast"] = forecast[:forecast_years] if forecast_years else forecast
+    if want("moon_sun"):
+        report["moon_sun"] = build_moon_sun_section(person, reference_date)
+    return report
