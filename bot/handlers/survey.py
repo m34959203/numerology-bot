@@ -247,36 +247,55 @@ async def cb_confirm(query: CallbackQuery, state: FSMContext) -> None:
     data = await state.get_data()
     await query.answer()
     await query.message.answer(texts.CALCULATING, parse_mode=None)
+    order_id = data["order_id"]
 
-    person = PersonInput(
-        last_name=data["last_name"],
-        first_name=data["first_name"],
-        middle_name=data["middle_name"],
-        birth_date=date.fromisoformat(data["birth_date"]),
-        mother_birth_date=_opt_date(data.get("mother_birth_date")),
-        father_birth_date=_opt_date(data.get("father_birth_date")),
-        maiden_name=data.get("maiden_name") or None,
-    )
-    reference = datetime.now(UTC).date()
-    report = report_for(person, reference, data.get("service_code"))
-    full_name = f"{person.last_name} {person.first_name} {person.middle_name}"
-
-    async with session_scope() as session:
-        order_id = data["order_id"]
-        await save_survey(
-            session,
-            order_id,
-            last_name=person.last_name,
-            first_name=person.first_name,
-            middle_name=person.middle_name,
-            birth_date=person.birth_date,
-            mother_birth_date=person.mother_birth_date,
-            father_birth_date=person.father_birth_date,
-            maiden_name=person.maiden_name,
+    # Этап 1 — расчёт и сохранение. При сбое остаёмся в confirm: пользователь
+    # может повторить тем же «Всё верно» (данные анкеты не теряются).
+    try:
+        person = PersonInput(
+            last_name=data["last_name"],
+            first_name=data["first_name"],
+            middle_name=data["middle_name"],
+            birth_date=date.fromisoformat(data["birth_date"]),
+            mother_birth_date=_opt_date(data.get("mother_birth_date")),
+            father_birth_date=_opt_date(data.get("father_birth_date")),
+            maiden_name=data.get("maiden_name") or None,
         )
-        await save_result(session, order_id, json.dumps(report, ensure_ascii=False))
+        reference = datetime.now(UTC).date()
+        report = report_for(person, reference, data.get("service_code"))
+        full_name = f"{person.last_name} {person.first_name} {person.middle_name}"
+        async with session_scope() as session:
+            await save_survey(
+                session,
+                order_id,
+                last_name=person.last_name,
+                first_name=person.first_name,
+                middle_name=person.middle_name,
+                birth_date=person.birth_date,
+                mother_birth_date=person.mother_birth_date,
+                father_birth_date=person.father_birth_date,
+                maiden_name=person.maiden_name,
+            )
+            await save_result(session, order_id, json.dumps(report, ensure_ascii=False))
+    except Exception:
+        logger.exception("Сбой расчёта/сохранения order_id=%s", order_id)
+        await query.message.answer(
+            texts.CALC_ERROR, reply_markup=keyboards.confirm_kb(), parse_mode=None
+        )
+        return
 
-    await deliver_report(query.message, report, full_name, person.birth_date)
+    # Этап 2 — выдача. Отчёт уже сохранён, поэтому при сбое отправки чистим
+    # анкету и отсылаем за ним в «Мои расчёты».
+    try:
+        await deliver_report(query.message, report, full_name, person.birth_date)
+    except Exception:
+        logger.exception("Сбой выдачи order_id=%s", order_id)
+        await state.clear()
+        await query.message.answer(
+            texts.DELIVER_ERROR, reply_markup=keyboards.to_menu_kb(), parse_mode=None
+        )
+        return
+
     await state.clear()
     await query.message.answer(
         texts.DELIVERED, reply_markup=keyboards.to_menu_kb(), parse_mode=None

@@ -2,6 +2,11 @@ services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-numerology}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD в .env}
@@ -20,6 +25,11 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     environment:
       BOT_TOKEN: ${BOT_TOKEN:?задайте BOT_TOKEN в .env}
       ADMIN_IDS: ${ADMIN_IDS:-}
@@ -27,6 +37,10 @@ services:
       REPORT_FORMAT: ${REPORT_FORMAT:-pdf}
       RUN_MODE: polling
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_DIR: /app/logs
+    volumes:
+      - botlogs:/app/logs
 
 volumes:
   pgdata:
+  botlogs:

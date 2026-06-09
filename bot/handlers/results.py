@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 
 from aiogram import F, Router
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
@@ -56,4 +57,8 @@ async def cb_open_result(query: CallbackQuery) -> None:
         birth = survey.birth_date if survey else None
 
     await query.answer()
-    await deliver_report(query.message, report, full_name, birth)
+    try:
+        await deliver_report(query.message, report, full_name, birth)
+    except Exception:
+        logging.getLogger(__name__).exception("Сбой повторной выдачи result_id=%s", result_id)
+        await query.message.answer(texts.DELIVER_ERROR, parse_mode=None)

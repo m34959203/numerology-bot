@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     webhook_path: str = "/webhook"
 
     log_level: str = "INFO"
+    # Каталог для персистентных логов с ротацией (RotatingFileHandler).
+    # Пусто → только stdout. В docker задаётся LOG_DIR=/app/logs (volume botlogs).
+    log_dir: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
