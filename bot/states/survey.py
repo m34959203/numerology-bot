@@ -11,7 +11,8 @@ class SurveyStates(StatesGroup):
     first_name = State()  # имя
     middle_name = State()  # отчество
     birth_date = State()  # дата рождения (ДД.ММ.ГГГГ)
-    mother_birth_date = State()  # опц.
-    father_birth_date = State()  # опц.
-    maiden_name = State()  # опц. девичья фамилия
+    mother_birth_date = State()  # опц., если тариф с кармическими событиями
+    father_birth_date = State()  # опц., если тариф с кармическими событиями
+    gender = State()  # пол (гейт девичьей фамилии); в расчёте не участвует
+    maiden_name = State()  # опц. девичья фамилия (только для женщин)
     confirm = State()  # подтверждение введённых данных
