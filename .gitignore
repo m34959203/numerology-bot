@@ -31,3 +31,6 @@ htmlcov/
 
 # Logs
 *.log
+
+# Бэкапы БД — содержат ПДн, не в git
+backups/

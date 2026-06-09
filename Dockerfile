@@ -27,8 +27,11 @@ COPY alembic.ini ./
 COPY migrations ./migrations
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
+# /app/logs создаётся заранее: named volume botlogs при первом монтировании
+# наследует владельца каталога (appuser), иначе non-root не сможет писать логи.
 RUN chmod +x /usr/local/bin/entrypoint.sh \
     && useradd -m -u 10001 appuser \
+    && mkdir -p /app/logs \
     && chown -R appuser:appuser /app
 USER appuser
 
