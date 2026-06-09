@@ -11,7 +11,7 @@ import pytest
 from core.numerology import PersonInput
 from core.numerology.report import ALL_SECTIONS, build_report
 from core.numerology.tariffs import TARIFFS, report_for
-from core.pdf import _FONT_CANDIDATES, _find_font
+from core.pdf import fonts_available
 from core.render import render_report
 
 PERSON = PersonInput("Ерофеева", "Юлия", "Владимировна", date(1990, 2, 20))
@@ -92,8 +92,8 @@ def test_render_5y_title():
 
 def test_pdf_partial_report_builds():
     pytest.importorskip("reportlab")
-    if _find_font(_FONT_CANDIDATES) is None:
-        pytest.skip("нет кириллического TTF-шрифта (fonts-dejavu-core)")
+    if not fonts_available():
+        pytest.skip("нет кириллического TTF-шрифта (бандл PT или fonts-dejavu-core)")
     from core.pdf import build_report_pdf
 
     rep = report_for(PERSON, REF, "matrix_mini")
