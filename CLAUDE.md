@@ -43,13 +43,22 @@ python -m bot.main
 | `codes.py` | `РАСЧЕТ`, `Calculation`, `Lists` | 3 |
 | `matrix.py` | `Matr` (ядро, 4715 формул) | 4 |
 | `moon_sun.py` | `луна и солнце` (+ Calculation/Lists) + `ЧПМ` | 5 |
-| `report.py` | `РАСЧЕТ` (сборка отчёта) | — |
+| `report.py` | `РАСЧЕТ` (сборка отчёта + лукап трактовок по значениям) | — |
+| `tariffs.py` | продуктовый слой: выбор блоков отчёта по полям (атомам) | — |
+| `daily.py` | прогноз на выбранную дату (ЧПД + биоритм дня) | — |
+
+**Источник трактовок:** лист `текст` (блоки качеств, ЧЖП, число души, кодировки,
+Луна/Солнце/ИТОГ по году, график кода жизни). Извлечение — `scripts/extract_texts.py`
+(REGISTRY диапазонов); карта и сверка методик — `docs/content-extraction-map.md`.
+`matrix.py` — golden, трактовки в него не добавляем (только на слой `report`/`render`).
 
 ### Перенос формул Excel → Python
 Excel-функции реализуются как хелперы (см. `core/numerology/_excel.py` при появлении): IF→тернарник, IFERROR→try/except, ROUND/ROUNDDOWN, MID/LEFT/RIGHT/LEN, MATCH/INDEX/VLOOKUP→словари, INDIRECT→диспетч по имени, DATE/EDATE/YEAR/MONTH/DAY→`datetime`+`dateutil.relativedelta`, ISODD, COUNTIFS, ABS.
 
 ### Платежи
 - Telegram Stars: `currency="XTR"`, `LabeledPrice`. `pre_checkout_query` → `ok=True`. `successful_payment` → запись + выдача.
+- **Тестовый режим:** `PAYMENT_IMITATION=true` (дефолт сейчас) — платёж имитируется, анкета запускается сразу. Боевой Stars — `PAYMENT_IMITATION=false`. Прайс в тенге (`Service.price_tenge`).
+- **Ручные тарифы:** детские/совместимость (`tariffs.spec_for(code).manual`) не оплачиваются в боте — карточка ведёт к мастеру.
 - **Идемпотентность:** хранить `telegram_payment_charge_id`; один платёж = одна выдача.
 - Возврат: `refund_star_payment` по команде админа.
 - Провайдер абстрагирован за интерфейсом `PaymentProvider` (на будущее Kaspi/посредник).
