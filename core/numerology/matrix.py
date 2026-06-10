@@ -150,6 +150,31 @@ def rebirth_cycle(age: int, anchors: list[int]) -> int:
     return anchors[(age // 12) % 5]
 
 
+def current_energy_trend(person: PersonInput, reference_date: date | None = None) -> int:
+    """Энергопотенциал на текущий возраст: тренд energy_potential (РАСЧЕТ J).
+
+    2 — рост / на подъёме, −1 — на спаде, 1/0 — стабильно. Используется для
+    блока «энергетический потенциал (на спаде / на подъёме)» в тарифах-прогнозах.
+    """
+    if reference_date is None:
+        from datetime import UTC, datetime
+
+        reference_date = datetime.now(UTC).date()
+    age = relativedelta(reference_date, person.birth_date).years
+    anchors = _energy_anchors(compute_codes(person, reference_date)["life_code"])
+    return energy_potential(age, anchors)
+
+
+def life_code_graph_digit(life_code: str, age: int) -> int:
+    """Цифра «графика кода жизни» на возраст (лист 19, сверено с формулами).
+
+    F37 = INDEX(AR32-цифры, MAX(MATCH возраста в сетке F22:K34)). Сетка — возрасты
+    0–77 по 6 в ряд (строка = age//6, колонка = age%6), AR32 = AN11 = код жизни.
+    Итог: активная цифра = код_жизни[age % 6]. Описание — текст!B213:C222 (0–9).
+    """
+    return int(life_code[age % 6])
+
+
 def danger_age(person: PersonInput, reference_date: date) -> int | None:
     """Опасный возраст: первый возраст ≥ текущего с Солнцем года = 0 (Matr!F8)."""
     life_code = int(compute_codes(person, reference_date)["life_code"])

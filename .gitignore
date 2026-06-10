@@ -34,3 +34,6 @@ htmlcov/
 
 # Бэкапы БД — содержат ПДн, не в git
 backups/
+
+# временный дамп листа «текст» (регенерируется extract_texts)
+docs/_textsheet_full_dump.txt

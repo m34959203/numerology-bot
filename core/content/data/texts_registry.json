@@ -54,6 +54,11 @@
   "multi": false,
   "src": "O40"
  },
+ "life_force_graph": {
+  "keys": 10,
+  "multi": false,
+  "src": "Matr!AH"
+ },
  "life_path": {
   "keys": 12,
   "multi": true,
@@ -73,6 +78,11 @@
   "keys": 6,
   "multi": false,
   "src": "S40"
+ },
+ "moon_year": {
+  "keys": 18,
+  "multi": false,
+  "src": "Matr"
  },
  "personal_year": {
   "keys": 9,
@@ -114,9 +124,19 @@
   "multi": false,
   "src": "W40"
  },
+ "sun_year": {
+  "keys": 19,
+  "multi": false,
+  "src": "Matr"
+ },
  "temperament": {
   "keys": 10,
   "multi": false,
   "src": "W28"
+ },
+ "year_total": {
+  "keys": 37,
+  "multi": false,
+  "src": "Matr"
  }
 }

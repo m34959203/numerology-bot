@@ -35,9 +35,9 @@ router = Router(name="survey")
 
 
 def _flags(data: dict) -> tuple[bool, bool]:
-    """(нужны даты родителей, нужны пол+девичья) — по составу секций тарифа."""
-    sections = spec_for(data.get("service_code")).sections
-    return "karma_events" in sections, "name" in sections
+    """(нужны даты родителей, нужны пол+девичья) — по требованиям тарифа."""
+    spec = spec_for(data.get("service_code"))
+    return spec.needs_parents, spec.needs_name
 
 
 def _opt_date(iso: str | None) -> date | None:

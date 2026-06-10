@@ -12,11 +12,19 @@ def main_menu() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text=texts.BTN_SERVICES, callback_data="menu:services")],
+            [InlineKeyboardButton(text=texts.BTN_DAILY, callback_data="menu:daily")],
             [
                 InlineKeyboardButton(text=texts.BTN_MY_RESULTS, callback_data="menu:results"),
                 InlineKeyboardButton(text=texts.BTN_HELP, callback_data="menu:help"),
             ],
         ]
+    )
+
+
+def daily_today_kb() -> InlineKeyboardMarkup:
+    """Клавиатура шага «дата прогноза»: быстрый выбор «Сегодня»."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[[InlineKeyboardButton(text=texts.BTN_TODAY, callback_data="daily:today")]]
     )
 
 
@@ -33,15 +41,21 @@ def services_kb(services) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def service_card_kb(service_id: int, price_tenge: int) -> InlineKeyboardMarkup:
+def service_card_kb(
+    service_id: int, price_tenge: int, contact_url: str | None = None
+) -> InlineKeyboardMarkup:
+    """Карточка услуги. Для ручных тарифов (contact_url) — кнопка контакта мастера
+    вместо оплаты (детские/совместимость считаются вручную)."""
+    if contact_url:
+        action = InlineKeyboardButton(text=texts.BTN_CONTACT_MASTER, url=contact_url)
+    else:
+        action = InlineKeyboardButton(
+            text=f"{texts.BTN_PAY} · {format_price(price_tenge)}",
+            callback_data=f"pay:{service_id}",
+        )
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text=f"{texts.BTN_PAY} · {format_price(price_tenge)}",
-                    callback_data=f"pay:{service_id}",
-                )
-            ],
+            [action],
             [InlineKeyboardButton(text=texts.BTN_BACK, callback_data="menu:services")],
         ]
     )

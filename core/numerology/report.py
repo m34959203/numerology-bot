@@ -16,7 +16,12 @@ from core.content.loader import interpret
 from core.numerology.biorhythm import compute_biorhythm
 from core.numerology.codes import compute_codes
 from core.numerology.karma_events import compute_karma_events
-from core.numerology.matrix import compute_forecast, danger_age
+from core.numerology.matrix import (
+    compute_forecast,
+    current_energy_trend,
+    danger_age,
+    life_code_graph_digit,
+)
 from core.numerology.moon_sun import compute_monthly_moon_sun, compute_personal_numbers
 from core.numerology.name import compute_name_numbers
 from core.numerology.person import PersonInput
@@ -107,12 +112,35 @@ def build_calculations_section(person: PersonInput, reference_date: date | None 
         reference_date = datetime.now(UTC).date()
     section = compute_codes(person, reference_date)
     section["danger_age"] = danger_age(person, reference_date)
+    section["energy_trend"] = current_energy_trend(person, reference_date)
+    # Кодировки «до/после 35» (лист 18): 1-код = human_code, 2-код = second_code;
+    # оба трактуются по таблице кодировок (текст!B155:C210 = human_code.json).
+    section["human_code_text"] = interpret("human_code", section["human_code"])
+    section["second_code_text"] = interpret("human_code", section["second_code"])
     return section
 
 
 def build_forecast_section(person: PersonInput, reference_date: date | None = None) -> list[dict]:
-    """Блок «Прогноз на 5 лет» (Matr 29–33 → РАСЧЕТ)."""
-    return compute_forecast(person, reference_date)
+    """Блок «Прогноз на 5 лет» (Matr 29–33 → РАСЧЕТ).
+
+    Каждый год обогащается трактовками по ЕГО значениям (лукап из листа «текст»,
+    меняется вместе со значением): Луна/Солнце/ИТОГ года и цифра графика кода жизни.
+    Солнце=0 → текст «нулевого периода». matrix.compute_forecast остаётся чистым.
+    """
+    years = compute_forecast(person, reference_date)
+    life_code = compute_codes(person, reference_date)["life_code"]
+    for y in years:
+        # ИТОГ года — сверено с книгой: лист 29-33 D6 = VLOOKUP(Matr!H29..33, текст!H363:I401),
+        # где Matr!H = Солнце−Луна = наш year_value (точное совпадение на эталоне).
+        y["total_text"] = interpret("year_total", y["year_value"])
+        # «Нулевой период» (Солнце=0) — текст-справка из таблицы Солнца (текст!F382),
+        # выводим по запросу заказчика (в книге как отдельный per-год лукап не выводится).
+        y["sun_text"] = interpret("sun_year", y["sun"])
+        # График кода жизни: активная цифра = код_жизни[age % 6] (лист 19, сверено).
+        digit = life_code_graph_digit(life_code, y["age"])
+        y["life_force_digit"] = digit
+        y["life_force_text"] = interpret("life_force_graph", digit)
+    return years
 
 
 def build_moon_sun_section(person: PersonInput, reference_date: date | None = None) -> dict:
