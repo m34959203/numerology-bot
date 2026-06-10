@@ -32,8 +32,9 @@ async def test_forecast_tariff_goes_straight_to_confirm():
     assert await st.get_state() == SurveyStates.confirm
 
 
-async def test_mini_tariff_asks_mother_first():
-    st = await _state_at("matrix_mini")
+async def test_finance_tariff_asks_mother_first():
+    # «Финансовый прогноз»: заказчик требует имя родителей и год рождения.
+    st = await _state_at("finance_1y")
     msg = fake_message("20.02.1990")
     await survey.step_birth_date(msg, st)
     assert await st.get_state() == SurveyStates.mother_birth_date
@@ -41,7 +42,7 @@ async def test_mini_tariff_asks_mother_first():
 
 
 async def test_mother_stored_and_advances_to_father():
-    st = await _state_at("matrix_full")
+    st = await _state_at("finance_1y")
     await survey.step_birth_date(fake_message("20.02.1990"), st)
     await survey.step_mother_birth_date(fake_message("06.08.1971"), st)
     assert (await st.get_data())["mother_birth_date"] == "1971-08-06"
@@ -49,12 +50,13 @@ async def test_mother_stored_and_advances_to_father():
 
 
 async def test_skip_mother_then_skip_father_reaches_gender():
-    st = await _state_at("matrix_mini")
+    # Неизвестный код → DEFAULT_SPEC (безопасный максимум: родители + имя/пол).
+    st = await _state_at("unknown_tariff")
     await survey.step_birth_date(fake_message("20.02.1990"), st)
     await survey.skip_mother(fake_query("survey:skip"), st)
     assert await st.get_state() == SurveyStates.father_birth_date
     await survey.skip_father(fake_query("survey:skip"), st)
-    # mini включает секцию name → спрашиваем пол
+    # DEFAULT_SPEC требует имя → спрашиваем пол
     assert await st.get_state() == SurveyStates.gender
 
 

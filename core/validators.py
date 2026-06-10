@@ -30,6 +30,21 @@ def parse_birth_date(text: str) -> date:
     return d
 
 
+def parse_target_date(text: str) -> date:
+    """Разобрать произвольную дату ДД.ММ.ГГГГ (для прогноза на день — допускается
+    будущее, год 1900–2100). Без ограничения «не из будущего»."""
+    text = text.strip()
+    if not re.fullmatch(r"\d{1,2}\.\d{1,2}\.\d{4}", text):
+        raise ValidationError("Дата должна быть в формате ДД.ММ.ГГГГ, например 25.12.2026")
+    try:
+        d = datetime.strptime(text, "%d.%m.%Y").date()
+    except ValueError as e:
+        raise ValidationError("Такой даты не существует. Проверьте день и месяц.") from e
+    if not (1900 <= d.year <= 2100):
+        raise ValidationError("Год должен быть в диапазоне 1900–2100.")
+    return d
+
+
 def validate_name(text: str, field: str) -> str:
     """Проверить имя/фамилию/отчество: непустое, допустимый алфавит."""
     name = " ".join(text.strip().split())

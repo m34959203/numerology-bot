@@ -11,7 +11,13 @@ def test_render_contains_sections():
     p = PersonInput("Ерофеева", "Юлия", "Владимировна", date(1990, 2, 20))
     report = build_report(p, date(2026, 6, 6))
     text = render_report(report, "Ерофеева Юлия Владимировна", p.birth_date)
-    for marker in ["МАТРИЦА", "ВЫЧИСЛЕНИЯ", "ПСИХОМАТРИЦА", "ПРОГНОЗ НА 5 ЛЕТ", "ЛИЧНЫЕ ЧИСЛА"]:
+    for marker in [
+        "МАТРИЦА",
+        "КОДЫ И ПОКАЗАТЕЛИ",
+        "ПСИХОМАТРИЦА",
+        "ПРОГНОЗ НА 5 ЛЕТ",
+        "ЛИЧНЫЕ ЧИСЛА",
+    ]:
         assert marker in text
     assert "Код жизни: 796000" in text
 

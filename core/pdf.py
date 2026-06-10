@@ -35,7 +35,17 @@ from reportlab.platypus import (
 from reportlab.platypus.doctemplate import NextPageTemplate
 
 from bot.config import settings
-from core.render import _fmt_dates, _val
+from core.render import (
+    _ASPECT_LABELS,
+    _ENERGY_TREND_TEXT,
+    _SCALAR_LABELS,
+    _age_lt_30,
+    _as_text,
+    _fmt_dates,
+    _val,
+    _want,
+    labeled_aspects,
+)
 
 # --- палитра (RGB для печати; OKLCH-логика подобрана на глаз) ----------------
 PAPER = colors.HexColor("#FBF8F3")  # тёплый off-white, не чистый белый
@@ -384,59 +394,93 @@ def build_report_pdf(report: dict, full_name: str, birth_date: date | None) -> b
     _cover(flow, s, report, full_name, birth_date)
 
     # Рендерим только присутствующие секции — состав зависит от тарифа.
+    legacy = report.get("_fields") is None
+
     if "calculations" in report:
         c = report["calculations"]
-        danger = c["danger_age"] if c["danger_age"] is not None else "нет"
-        _section(flow, s, "Коды от даты рождения")
-        flow.append(
-            _kv_table(
-                s,
-                [
-                    ("Полных лет", str(c["full_years"])),
-                    ("Прожито дней", str(c["lived_days"])),
-                    ("Жизненная задача", str(c["life_task"])),
-                    ("Духовный уровень", str(c["spiritual_level"])),
-                    ("Код человека", str(c["human_code"])),
-                    ("Код жизни", str(c["life_code"])),
-                    ("Финансовый код", str(c["finance_code"])),
-                    ("Счастливые числа", str(c["lucky_numbers"])),
-                    ("Доступ к деньгам", str(c["money_access"])),
-                    ("Жизненные силы", str(c["vitality"])),
-                    ("Опасный возраст", str(danger)),
-                ],
+        pairs: list[tuple[str, str]] = []
+        if legacy:
+            pairs += [
+                ("Полных лет", str(c["full_years"])),
+                ("Прожито дней", str(c["lived_days"])),
+                ("Жизненная задача", str(c["life_task"])),
+                ("Духовный уровень", str(c["spiritual_level"])),
+            ]
+        if _want(report, "life_code"):
+            pairs.append(("Код жизни", str(c["life_code"])))
+        if _want(report, "lucky_numbers"):
+            pairs.append(("Счастливые числа", str(c["lucky_numbers"])))
+        if _want(report, "finance_code"):
+            pairs.append(("Финансовый код удачи", str(c["finance_code"])))
+        if legacy:
+            pairs.append(("Доступ к деньгам", str(c["money_access"])))
+        if _want(report, "vitality"):
+            pairs.append(("Жизненные силы", str(c["vitality"])))
+        if _want(report, "energy_trend"):
+            pairs.append(
+                ("Энергопотенциал", _ENERGY_TREND_TEXT.get(c["energy_trend"], "стабильно"))
             )
-        )
+        if _want(report, "danger_age"):
+            danger = c["danger_age"] if c["danger_age"] is not None else "нет"
+            pairs.append(("Опасный возраст", str(danger)))
+        if pairs:
+            _section(flow, s, "Коды от даты рождения")
+            flow.append(_kv_table(s, pairs))
+        # Кодировка жизни: два кода со сменой по возрасту (лист 18, до/после 35 лет).
+        if _want(report, "human_code"):
+            _section(flow, s, "Кодировка жизни")
+            for cap, code_key, text_key in (
+                ("До 35 лет", "human_code", "human_code_text"),
+                ("После 35 лет", "second_code", "second_code_text"),
+            ):
+                flow.append(
+                    Paragraph(
+                        f"<font color='#A8761F'><b>{cap} · код {_e(c[code_key])}.</b></font>",
+                        s["interp"],
+                    )
+                )
+                if c.get(text_key):
+                    flow.append(Paragraph(_e(_as_text(c[text_key])), s["body"]))
 
     if "psychomatrix" in report:
         pm = report["psychomatrix"]
         q = {row["label"]: row for row in pm["qualities"]}
         sc = {row["label"]: row for row in pm["scalars"]}
-        _section(flow, s, "Психоматрица · квадрат Пифагора")
-        flow.append(_psychomatrix_grid(s, q))
-        flow.append(Spacer(1, 12))
-        flow.append(
-            _kv_table(
-                s,
-                [
-                    ("Число души", str(sc["Число души"]["value"])),
-                    ("Жизненный путь", str(sc["Число жизненного пути (ЧЖП)"]["value"])),
-                    ("Уровень сознания", str(sc["Уровень сознания"]["value"])),
-                    ("Код поведения", str(sc["Код поведения"]["value"])),
-                ],
-                cols=4,
-            )
-        )
-        flow.append(Spacer(1, 6))
-        for lbl in _PSYCHO_ORDER:
-            text = q[lbl]["text"]
-            if text:
-                flow.append(
-                    Paragraph(
-                        f"<b>{_e(lbl)}</b> <font color='#A8761F'>{_val(q[lbl]['value'])}</font> — "
-                        f"{_e(text)}",
-                        s["interp"],
+        if _want(report, "psychomatrix"):
+            _section(flow, s, "Психоматрица · квадрат Пифагора")
+            flow.append(_psychomatrix_grid(s, q))
+            flow.append(Spacer(1, 12))
+            for lbl in _PSYCHO_ORDER:
+                text = q[lbl]["text"]
+                if text:
+                    val = _val(q[lbl]["value"])
+                    flow.append(
+                        Paragraph(
+                            f"<b>{_e(lbl)}</b> <font color='#A8761F'>{val}</font> — {_e(text)}",
+                            s["interp"],
+                        )
                     )
+        for atom, label in _SCALAR_LABELS:
+            if not _want(report, atom):
+                continue
+            if atom == "soul_number" and not (legacy or _age_lt_30(birth_date)):
+                continue
+            row = sc[label]
+            _section(flow, s, label)
+            val = _val(row["value"])
+            flow.append(
+                Paragraph(
+                    f"<font name='{_SERIF_B}' size='15' color='#A8761F'>{val}</font>",
+                    s["interp"],
                 )
+            )
+            aspects = _ASPECT_LABELS.get(atom)
+            if aspects:
+                for cap, body in labeled_aspects(row["text"], aspects):
+                    prefix = f"<b>{_e(cap)}.</b> " if cap else ""
+                    flow.append(Paragraph(prefix + _e(body), s["body"]))
+            elif row["text"]:
+                flow.append(Paragraph(_e(_as_text(row["text"])), s["body"]))
 
     if "name" in report:
         nm = report["name"]
@@ -487,52 +531,84 @@ def build_report_pdf(report: dict, full_name: str, birth_date: date | None) -> b
         fc = report["forecast"]
         _section(flow, s, "Прогноз на год" if len(fc) == 1 else f"Прогноз на {len(fc)} лет")
         for f in fc:
-            cyc = (
-                f"; 12-цикл: {_e(f['rebirth_cycle_text'])}"
-                if f["fate"] == "+" and f["rebirth_cycle_text"]
-                else ""
-            )
             sign = "+" if f["year_value"] >= 0 else ""
             head = (
                 f"<font name='{_SERIF_B}' size='15' color='#A8761F'>{f['year']}</font> "
-                f"<font color='#6B6E84'>возраст {f['age']}</font>"
+                f"<font color='#6B6E84'>возраст {f['age']} · личное число года "
+                f"{f['personal_year']} — {_e(f['personal_year_text'])}</font>"
             )
             flow.append(Paragraph(head, s["interp"]))
             flow.append(
                 Paragraph(
-                    f"Личное число {f['personal_year']} — {_e(f['personal_year_text'])}; "
-                    f"Луна {f['moon']} / Солнце {f['sun']}; "
-                    f"год {sign}{f['year_value']} — {_e(f['year_value_text'])}; "
-                    f"судьбоносный: {f['fate']}{cyc}",
+                    f"Луна {f['moon']} / Солнце {f['sun']} / ИТОГ {sign}{f['year_value']}",
                     s["body"],
                 )
             )
-            flow.append(Spacer(1, 4))
+            total = f.get("total_text") or f["year_value_text"]
+            if total:
+                flow.append(Paragraph(f"<b>Итог года.</b> {_e(_as_text(total))}", s["body"]))
+            if f["sun"] == 0 and f.get("sun_text"):
+                flow.append(
+                    Paragraph(
+                        f"<font color='#A8761F'><b>Нулевой период.</b></font> "
+                        f"{_e(_as_text(f['sun_text']))}",
+                        s["body"],
+                    )
+                )
+            if f.get("life_force_text"):
+                flow.append(
+                    Paragraph(
+                        f"<b>График кода жизни (код {f['life_force_digit']}).</b> "
+                        f"{_e(_as_text(f['life_force_text']))}",
+                        s["body"],
+                    )
+                )
+            if f["fate"] == "+":
+                flow.append(Paragraph("<b>Судьбоносный год.</b>", s["body"]))
+            flow.append(Spacer(1, 6))
 
     if "moon_sun" in report:
         ms = report["moon_sun"]
         pn = ms["personal_numbers"]
-        _section(flow, s, "Луна и Солнце по месяцам")
-        for m in ms["monthly"]:
-            flow.append(Paragraph(f"<b>{_e(m['month_name'])}.</b> {_e(m['text'])}", s["interp"]))
-        _section(flow, s, "Личные числа · на дату отчёта")
-        flow.append(
-            _kv_table(
-                s,
-                [
-                    ("Год", str(pn["personal_year"])),
-                    ("Месяц", str(pn["personal_month"])),
-                    ("День", str(pn["personal_day"])),
-                ],
+        if _want(report, "moon_sun_monthly"):
+            _section(flow, s, "Луна и Солнце по месяцам")
+            for m in ms["monthly"]:
+                flow.append(
+                    Paragraph(f"<b>{_e(m['month_name'])}.</b> {_e(m['text'])}", s["interp"])
+                )
+        if _want(report, "personal_year"):
+            _section(flow, s, "Персональное число года")
+            flow.append(
+                Paragraph(
+                    f"<font name='{_SERIF_B}' size='15' color='#A8761F'>"
+                    f"{pn['personal_year']}</font>",
+                    s["interp"],
+                )
             )
-        )
-        if pn["combo_title"]:
-            flow.append(Paragraph(f"<b>{_e(pn['combo_title'])}</b>", s["interp"]))
-            flow.append(Paragraph(_e(pn["combo_text"]), s["body"]))
-        if pn["personal_month_text"]:
-            flow.append(Paragraph(f"<b>Месяц.</b> {_e(pn['personal_month_text'])}", s["interp"]))
-        if pn["personal_day_text"]:
-            flow.append(Paragraph(f"<b>День.</b> {_e(pn['personal_day_text'])}", s["interp"]))
+            for para in _as_text(pn["personal_year_text"]).split("\n"):
+                if para.strip():
+                    flow.append(Paragraph(_e(para.strip()), s["body"]))
+        if _want(report, "personal_numbers"):
+            _section(flow, s, "Личные числа месяца и дня · на дату отчёта")
+            flow.append(
+                _kv_table(
+                    s,
+                    [
+                        ("Месяц", str(pn["personal_month"])),
+                        ("День", str(pn["personal_day"])),
+                    ],
+                    cols=2,
+                )
+            )
+            if pn["combo_title"]:
+                flow.append(Paragraph(f"<b>{_e(pn['combo_title'])}</b>", s["interp"]))
+                flow.append(Paragraph(_e(pn["combo_text"]), s["body"]))
+            if pn["personal_month_text"]:
+                flow.append(
+                    Paragraph(f"<b>Месяц.</b> {_e(pn['personal_month_text'])}", s["interp"])
+                )
+            if pn["personal_day_text"]:
+                flow.append(Paragraph(f"<b>День.</b> {_e(pn['personal_day_text'])}", s["interp"]))
 
     buf = BytesIO()
     doc = BaseDocTemplate(

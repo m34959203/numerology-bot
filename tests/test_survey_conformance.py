@@ -10,7 +10,7 @@ from datetime import date
 
 from bot.handlers.survey import _flags
 from core.numerology import PersonInput
-from core.numerology.tariffs import report_for
+from core.numerology.report import build_report
 
 REF = date(2026, 6, 6)
 PERSON = PersonInput(
@@ -25,35 +25,31 @@ PERSON = PersonInput(
 
 
 def test_flags_per_tariff():
-    # (нужны родители, нужны пол+девичья)
-    assert _flags({"service_code": "matrix_mini"}) == (True, True)
-    assert _flags({"service_code": "matrix_full"}) == (True, True)
+    # (нужны родители, нужны пол+девичья) — по спецификации заказчика.
+    assert _flags({"service_code": "matrix_mini"}) == (False, False)
+    assert _flags({"service_code": "matrix_full"}) == (False, False)
     assert _flags({"service_code": "forecast_1y"}) == (False, False)
     assert _flags({"service_code": "forecast_5y"}) == (False, False)
-    # неизвестный код → полный разбор (безопасный максимум)
+    # «Финансовый прогноз»: заказчик требует имя родителей и год рождения.
+    assert _flags({"service_code": "finance_1y"}) == (True, False)
+    # неизвестный код → полный разбор (безопасный максимум: собрать всё)
     assert _flags({}) == (True, True)
 
 
 def test_parents_populate_karma_events():
-    rep = report_for(PERSON, REF, "matrix_full")
-    ke = rep["karma_events"]
+    # Расчёт кармических событий (BG17/BG20) — через полный build_report.
+    ke = build_report(PERSON, REF)["karma_events"]
     assert ke["first"] and ke["second"], "с датами родителей события не должны быть пустыми"
     assert "28" in ke["first"]["text"]  # эталон: возраст 28
 
 
 def test_no_parents_empty_karma_events():
     bare = PersonInput("Ерофеева", "Юлия", "Владимировна", date(1990, 2, 20))
-    rep = report_for(bare, REF, "matrix_full")
-    assert rep["karma_events"]["first"] is None
-    assert rep["karma_events"]["second"] is None
+    ke = build_report(bare, REF)["karma_events"]
+    assert ke["first"] is None
+    assert ke["second"] is None
 
 
 def test_maiden_name_number():
-    rep = report_for(PERSON, REF, "matrix_mini")
-    assert rep["name"]["maiden_name"] == 3  # эталон ЕРОФЕЕВА…/МИРОНОВА: дев. = 3
-
-
-def test_forecast_tariff_skips_name_and_karma():
-    rep = report_for(PERSON, REF, "forecast_1y")
-    assert "karma_events" not in rep
-    assert "name" not in rep
+    name = build_report(PERSON, REF)["name"]
+    assert name["maiden_name"] == 3  # эталон ЕРОФЕЕВА…/МИРОНОВА: дев. = 3

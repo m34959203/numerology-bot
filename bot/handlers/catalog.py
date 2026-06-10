@@ -20,6 +20,7 @@ from bot.config import settings
 from bot.states.survey import SurveyStates
 from core.db import session_scope
 from core.models import Order
+from core.numerology.tariffs import spec_for
 from core.repositories import (
     create_order,
     get_or_create_user,
@@ -53,6 +54,8 @@ async def cb_service_card(query: CallbackQuery) -> None:
     if service is None or not service.is_active:
         await query.answer("Услуга недоступна", show_alert=True)
         return
+    spec = spec_for(service.code)
+    contact_url = spec.contact_url if spec.manual else None
     text = (
         f"<b>{escape(service.title)}</b>\n\n"
         f"{escape(service.description)}\n\n"
@@ -60,7 +63,7 @@ async def cb_service_card(query: CallbackQuery) -> None:
     )
     await query.message.edit_text(
         text,
-        reply_markup=keyboards.service_card_kb(service.id, service.price_tenge),
+        reply_markup=keyboards.service_card_kb(service.id, service.price_tenge, contact_url),
         parse_mode="HTML",
     )
     await query.answer()
@@ -73,6 +76,10 @@ async def cb_pay(query: CallbackQuery, state: FSMContext) -> None:
         service = await get_service(session, service_id)
         if service is None or not service.is_active:
             await query.answer("Услуга недоступна", show_alert=True)
+            return
+        if spec_for(service.code).manual:
+            # Ручные тарифы оплачиваются не в боте — клиента ведут к мастеру.
+            await query.answer("Этот разбор оформляется у мастера", show_alert=True)
             return
         user = await get_or_create_user(session, query.from_user.id, query.from_user.full_name)
         order = await create_order(session, user.id, service.id)

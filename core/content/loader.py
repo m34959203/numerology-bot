@@ -34,3 +34,13 @@ def interpret(topic: str, key: str) -> str | list[str] | None:
     None — если ключа нет в таблице.
     """
     return _load_topic(topic).get(str(key).strip())
+
+
+def interpret_prefixed(topic: str, number: int | str) -> str | list[str] | None:
+    """Лукап по ведущему числу ключа: темы вида «N - заголовок» (напр. personal_year,
+    где ключ = «2 - год взаимоотношения», а на входе только число 2). None — если нет."""
+    want = str(number).strip()
+    for key, value in _load_topic(topic).items():
+        if key.split(" ", 1)[0] == want:
+            return value
+    return None

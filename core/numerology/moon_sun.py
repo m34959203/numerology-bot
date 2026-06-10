@@ -24,7 +24,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from core.content.loader import interpret
+from core.content.loader import interpret, interpret_prefixed
 from core.numerology._digits import digit_sum, reduce_1_9
 from core.numerology.codes import compute_codes
 from core.numerology.person import PersonInput
@@ -110,17 +110,24 @@ def compute_monthly_moon_sun(person: PersonInput, reference_date: date) -> list[
 
 def compute_personal_numbers(person: PersonInput, reference_date: date) -> dict:
     """ЧПГ/ЧПМ/ЧПД + тексты (лист ЧПМ)."""
+    # Локальный импорт: короткая метка персонального года живёт в модуле прогноза
+    # (Matr P); импорт на уровне модуля создал бы видимость цикла matrix↔moon_sun.
+    from core.numerology.matrix import PERSONAL_YEAR_TEXT
+
     b = person.birth_date
     chpg = reduce_1_9(digit_sum(reference_date.year) + reduce_1_9(b.day + b.month))
     chpm = reduce_1_9(chpg + reference_date.month)
     chpd = reduce_1_9(chpm + reference_date.day)
     combo = f"{chpm} {_MINUS} {chpg}"
+    # Полное описание персонального года из листа «текст» (personal_year.json,
+    # ключи «N - заголовок»); fallback — короткая метка Matr P, если текста нет.
+    year_full = interpret_prefixed("personal_year", chpg)
     return {
         "personal_year": chpg,
         "personal_month": chpm,
         "personal_day": chpd,
         "combo_key": combo,
-        "personal_year_text": None,  # ЧПГ отдельного текста в книге нет
+        "personal_year_text": year_full or PERSONAL_YEAR_TEXT.get(chpg),
         "personal_month_text": interpret("personal_month", chpm),
         "personal_day_text": interpret("personal_day", chpd),
         "combo_title": interpret("personal_combo_title", combo),

@@ -34,7 +34,8 @@ THRESHOLD_27 = 27
 @dataclass(frozen=True)
 class Codes:
     spiritual_level: int  # духовный уровень (BD7)
-    human_code: str  # код человека (concat BD7,BE7)
+    human_code: str  # код человека / 1-код «до 35 лет» (concat BD7,BE7 = calc!E18&E19)
+    second_code: str  # 2-код «после 35 лет» (concat BF7,BG7 = calc!E20&E21)
     lucky_numbers: str  # счастливые числа «BE7 и BG7»
     life_code: str  # код жизни (день×месяц×год, паддинг до 6)
     finance_code: str  # финансовый код удачи
@@ -82,6 +83,7 @@ def compute_codes(person: PersonInput, reference_date: date | None = None) -> di
     result = Codes(
         spiritual_level=spiritual,
         human_code=f"{spiritual}{be7}",
+        second_code=f"{bf7}{bg7}",
         lucky_numbers=f"{be7} и {bg7}",
         life_code=life_code,
         finance_code=fin,

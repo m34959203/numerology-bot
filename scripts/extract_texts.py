@@ -77,6 +77,13 @@ REGISTRY: dict[str, dict] = {
     "spiritual_material_balance": {"src": "W44", "ranges": ["B142:C151"]},
     "human_code": {"src": "AR30", "ranges": ["B155:C210"]},  # лист 18 (коды 44/22)
     "personal_year": {"src": "P55", "ranges": ["B350:C358"]},  # листы 24–28
+    # --- Прогноз по годам (ключ = расчётное значение года) ---
+    # «График кода жизни»: цифра цикла жизненных сил 0–9 → описание периода.
+    "life_force_graph": {"src": "Matr!AH", "ranges": ["B213:C222"]},
+    # Луна года (B), Солнце года (E, ключ 0 = «нулевой период»), ИТОГ Солнце−Луна (H).
+    "moon_year": {"src": "Matr", "ranges": ["B363:C381"]},
+    "sun_year": {"src": "Matr", "ranges": ["E363:F382"]},
+    "year_total": {"src": "Matr", "ranges": ["H363:I401"]},
 }
 
 _CELL = re.compile(r"([A-Z]+)(\d+)")
