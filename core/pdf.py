@@ -426,6 +426,17 @@ def build_report_pdf(report: dict, full_name: str, birth_date: date | None) -> b
         if pairs:
             _section(flow, s, "Коды от даты рождения")
             flow.append(_kv_table(s, pairs))
+        # Энергетический график на текущий год под «Код жизни» (паритет с текстом,
+        # фидбэк заказчицы 11.06.2026: код жизни идёт с описанием за «сейчас»).
+        if _want(report, "life_code") and c.get("life_code_graph_text"):
+            digit = c.get("life_code_graph_digit")
+            flow.append(
+                Paragraph(
+                    f"<b>Энергетический график на текущий год (код {digit}).</b> "
+                    f"{_e(_as_text(c['life_code_graph_text']))}",
+                    s["body"],
+                )
+            )
         # Кодировка жизни: два кода со сменой по возрасту (лист 18, до/после 35 лет).
         if _want(report, "human_code"):
             _section(flow, s, "Кодировка жизни")
@@ -571,11 +582,30 @@ def build_report_pdf(report: dict, full_name: str, birth_date: date | None) -> b
         ms = report["moon_sun"]
         pn = ms["personal_numbers"]
         if _want(report, "moon_sun_monthly"):
-            _section(flow, s, "Луна и Солнце по месяцам")
-            for m in ms["monthly"]:
-                flow.append(
-                    Paragraph(f"<b>{_e(m['month_name'])}.</b> {_e(m['text'])}", s["interp"])
-                )
+            years = ms.get("monthly_years") or [{"year": None, "monthly": ms["monthly"]}]
+            if len(years) > 1:
+                # Пятилетний прогноз: Луна/Солнце по месяцам на все годы (фидбэк 11.06.2026).
+                _section(flow, s, "Луна и Солнце по месяцам · по годам")
+                for yb in years:
+                    flow.append(
+                        Paragraph(
+                            f"<font name='{_SERIF_B}' size='13' color='#A8761F'>"
+                            f"{yb['year']}</font>",
+                            s["interp"],
+                        )
+                    )
+                    for m in yb["monthly"]:
+                        flow.append(
+                            Paragraph(
+                                f"<b>{_e(m['month_name'])}.</b> {_e(m['text'])}", s["interp"]
+                            )
+                        )
+            else:
+                _section(flow, s, "Луна и Солнце по месяцам")
+                for m in years[0]["monthly"]:
+                    flow.append(
+                        Paragraph(f"<b>{_e(m['month_name'])}.</b> {_e(m['text'])}", s["interp"])
+                    )
         if _want(report, "personal_year"):
             _section(flow, s, "Персональное число года")
             flow.append(
