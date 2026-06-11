@@ -50,6 +50,30 @@ def _opt_date(iso: str | None) -> date | None:
     return date.fromisoformat(iso) if iso else None
 
 
+async def begin_survey(
+    message: Message,
+    state: FSMContext,
+    *,
+    order_id: int,
+    charge_id: str,
+    service_code: str,
+    service_title: str,
+    locale: str,
+) -> None:
+    """Запустить FSM-анкету после оплаты (Stars/имитация/TON) — единая точка.
+
+    Кладёт в state идентификаторы заказа + локаль и спрашивает первое поле."""
+    await state.set_state(SurveyStates.last_name)
+    await state.update_data(
+        order_id=order_id,
+        charge_id=charge_id,
+        service_code=service_code,
+        service_title=service_title,
+        locale=locale,
+    )
+    await message.answer(t("ui.ask_last_name", locale))
+
+
 def _summary(data: dict) -> str:
     """Сводка для подтверждения — показываем только заполненные поля."""
     loc = _loc(data)

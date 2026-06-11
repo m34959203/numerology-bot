@@ -45,6 +45,7 @@ async def _seed_service(test_db) -> int:
 
 async def test_pay_imitation_starts_survey(test_db, monkeypatch):
     monkeypatch.setattr(settings, "payment_imitation", True)
+    monkeypatch.setattr(settings, "crypto_pay_token", "")  # TON отключён в этом тесте
     svc_id = await _seed_service(test_db)
     q = fake_query(f"pay:{svc_id}")
     st = make_state()
@@ -57,6 +58,7 @@ async def test_pay_imitation_starts_survey(test_db, monkeypatch):
 
 async def test_pay_real_mode_sends_invoice(test_db, monkeypatch):
     monkeypatch.setattr(settings, "payment_imitation", False)
+    monkeypatch.setattr(settings, "crypto_pay_token", "")  # TON отключён в этом тесте
     # боевой режим использует price_stars
     async with test_db() as s:
         await repo.seed_services(

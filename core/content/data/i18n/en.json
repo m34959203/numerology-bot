@@ -241,5 +241,11 @@
  "val.year_range": "The year must be in the range 1900–2100.",
  "val.name_empty": "{field} cannot be empty.",
  "val.name_long": "{field} is too long (maximum {max} characters).",
- "val.name_alpha": "{field}: only letters, hyphens, and spaces are allowed."
+ "val.name_alpha": "{field}: only letters, hyphens, and spaces are allowed.",
+ "ui.btn_pay_open": "💎 Pay with TON",
+ "ui.btn_check_payment": "🔄 Check payment",
+ "ui.ton_invoice": "Invoice for {amount} {fiat} (payable in TON at current rate).\nTap «Pay with TON», complete the payment in your wallet, then «Check payment».",
+ "ui.ton_not_paid": "Payment hasn't arrived yet. Complete the payment and tap «Check payment» again.",
+ "ui.ton_invoice_error": "Couldn't create the payment invoice. Please try again later.",
+ "ui.ton_expired": "Invoice not found or expired. Please place your order again."
 }

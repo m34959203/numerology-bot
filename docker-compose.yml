@@ -35,6 +35,9 @@ services:
       ADMIN_IDS: ${ADMIN_IDS:-}
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-numerology}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-numerology}
       REPORT_FORMAT: ${REPORT_FORMAT:-pdf}
+      PAYMENT_IMITATION: ${PAYMENT_IMITATION:-true}
+      CRYPTO_PAY_TOKEN: ${CRYPTO_PAY_TOKEN:-}
+      CRYPTO_PAY_TESTNET: ${CRYPTO_PAY_TESTNET:-true}
       RUN_MODE: polling
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       LOG_DIR: /app/logs

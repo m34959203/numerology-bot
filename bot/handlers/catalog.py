@@ -107,6 +107,13 @@ async def cb_pay(query: CallbackQuery, state: FSMContext) -> None:
             service.price_stars,
         )
 
+    # Приём в TON (Crypto Pay) — приоритетно, если задан токен.
+    if settings.crypto_pay_enabled:
+        from bot.handlers.ton_payment import send_ton_invoice
+
+        await send_ton_invoice(query, order_id, code, title, price_tenge, locale)
+        return
+
     if settings.payment_imitation:
         await _imitate_payment(query, state, order_id, code, title, price_tenge, locale)
         return

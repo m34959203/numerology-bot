@@ -11,7 +11,17 @@ from aiogram import Bot, Dispatcher
 
 from bot.catalog_data import DEFAULT_SERVICES
 from bot.config import settings
-from bot.handlers import admin, catalog, daily, language, payment, results, start, survey
+from bot.handlers import (
+    admin,
+    catalog,
+    daily,
+    language,
+    payment,
+    results,
+    start,
+    survey,
+    ton_payment,
+)
 from core.db import create_all, session_scope
 from core.repositories import seed_services
 
@@ -27,6 +37,7 @@ def build_dispatcher() -> Dispatcher:
         catalog.router,
         daily.router,
         payment.router,
+        ton_payment.router,
         survey.router,
         results.router,
         admin.router,

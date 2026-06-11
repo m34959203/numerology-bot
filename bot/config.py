@@ -22,6 +22,14 @@ class Settings(BaseSettings):
     # оплате — выставить PAYMENT_IMITATION=false в .env.
     payment_imitation: bool = True
 
+    # Приём оплаты в TON через Crypto Pay (@CryptoBot / @CryptoTestnetBot).
+    # Токен приложения — в .env (CRYPTO_PAY_TOKEN); пусто → TON-оплата скрыта.
+    # CRYPTO_PAY_TESTNET=true — тестовая сеть (testnet-pay.crypt.bot).
+    crypto_pay_token: str = ""
+    crypto_pay_testnet: bool = True
+    crypto_pay_asset: str = "TON"  # криптовалюта приёма (TON по умолчанию)
+    crypto_pay_fiat: str = "KZT"  # валюта цены для автоконвертации (тенге)
+
     run_mode: str = "polling"  # polling | webhook
     webhook_base_url: str = ""
     webhook_path: str = "/webhook"
@@ -36,6 +44,11 @@ class Settings(BaseSettings):
     @property
     def admin_id_list(self) -> list[int]:
         return [int(x) for x in self.admin_ids.split(",") if x.strip()]
+
+    @property
+    def crypto_pay_enabled(self) -> bool:
+        """TON-оплата доступна, если задан токен Crypto Pay."""
+        return bool(self.crypto_pay_token.strip())
 
 
 settings = Settings()
