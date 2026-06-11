@@ -113,6 +113,14 @@ def build_calculations_section(person: PersonInput, reference_date: date | None 
     section = compute_codes(person, reference_date)
     section["danger_age"] = danger_age(person, reference_date)
     section["energy_trend"] = current_energy_trend(person, reference_date)
+    # «Код жизни» в РАСЧЕТ — это число (AN11=Matr!BI7), а ячейка ссылается на
+    # описание = лист 19 «График кода жизни»: D36=VLOOKUP(F37, текст!B213:C222),
+    # где F37=INDEX(код_жизни_цифры, age%6) — активная цифра графика за текущий
+    # возраст. Канонический ярлык блока — «График кода жизни» (текст!B212).
+    # Разворачиваем эту ссылку инлайном под числом (фидбэк заказчицы 11.06.2026).
+    graph_digit = life_code_graph_digit(section["life_code"], section["full_years"])
+    section["life_code_graph_digit"] = graph_digit
+    section["life_code_graph_text"] = interpret("life_force_graph", graph_digit)
     # Кодировки «до/после 35» (лист 18): 1-код = human_code, 2-код = second_code;
     # оба трактуются по таблице кодировок (текст!B155:C210 = human_code.json).
     section["human_code_text"] = interpret("human_code", section["human_code"])
@@ -143,14 +151,33 @@ def build_forecast_section(person: PersonInput, reference_date: date | None = No
     return years
 
 
-def build_moon_sun_section(person: PersonInput, reference_date: date | None = None) -> dict:
-    """Блоки «Луна и Солнце по месяцам» и «ЧПГ/ЧПМ/ЧПД» (Этап 5)."""
+def build_moon_sun_section(
+    person: PersonInput, reference_date: date | None = None, *, span_years: int = 1
+) -> dict:
+    """Блоки «Луна и Солнце по месяцам» и «ЧПГ/ЧПМ/ЧПД» (Этап 5).
+
+    span_years — на сколько лет вперёд считать помесячную Луну/Солнце (по фидбэку
+    заказчицы 11.06.2026 пятилетний прогноз показывает её на все годы). Ключ
+    "monthly" всегда = текущий год (обратная совместимость рендера/PDF); полный
+    набор лет — в "monthly_years" = [{"year", "monthly"}].
+    """
     if reference_date is None:
         from datetime import UTC, datetime
 
         reference_date = datetime.now(UTC).date()
+    from dateutil.relativedelta import relativedelta
+
+    span = max(1, span_years)
+    monthly_years = [
+        {
+            "year": (ref_i := reference_date + relativedelta(years=i)).year,
+            "monthly": compute_monthly_moon_sun(person, ref_i),
+        }
+        for i in range(span)
+    ]
     return {
-        "monthly": compute_monthly_moon_sun(person, reference_date),
+        "monthly": monthly_years[0]["monthly"],
+        "monthly_years": monthly_years,
         "personal_numbers": compute_personal_numbers(person, reference_date),
     }
 
@@ -197,5 +224,7 @@ def build_report(
         forecast = build_forecast_section(person, reference_date)
         report["forecast"] = forecast[:forecast_years] if forecast_years else forecast
     if want("moon_sun"):
-        report["moon_sun"] = build_moon_sun_section(person, reference_date)
+        report["moon_sun"] = build_moon_sun_section(
+            person, reference_date, span_years=forecast_years or 1
+        )
     return report

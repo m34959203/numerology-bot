@@ -67,7 +67,8 @@ def test_matrix_full_has_spec_fields():
 
 
 def test_finance_1y_is_money_only():
-    assert _fields("finance_1y") == {"finance_code", "moon_sun_monthly"}
+    # Персональное число года добавлено по фидбэку заказчицы (11.06.2026).
+    assert _fields("finance_1y") == {"finance_code", "moon_sun_monthly", "personal_year"}
     assert _sections("finance_1y") == {"calculations", "moon_sun"}
     assert spec_for("finance_1y").needs_parents is True
 

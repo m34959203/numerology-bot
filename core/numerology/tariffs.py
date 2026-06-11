@@ -182,10 +182,11 @@ TARIFFS: dict[str, TariffSpec] = {
         ),
         forecast_years=5,
     ),
-    # Финансовый прогноз на 1 год: финкод, помесячный прогноз, энергографик.
+    # Финансовый прогноз на 1 год: финкод, помесячный прогноз, энергографик,
+    # персональное число года (добавлено по фидбэку заказчицы 11.06.2026).
     # Заказчик: «обязательно укажите имя родителей и год рождения».
     "finance_1y": TariffSpec(
-        fields=frozenset({FINANCE_CODE, MOON_SUN_MONTHLY}),
+        fields=frozenset({FINANCE_CODE, MOON_SUN_MONTHLY, PERSONAL_YEAR}),
         forecast_years=0,
         needs_parents=True,
     ),

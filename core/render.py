@@ -13,6 +13,22 @@ TELEGRAM_LIMIT = 4096
 # Энергопотенциал (РАСЧЕТ J) → человекочитаемый статус.
 _ENERGY_TREND_TEXT = {2: "на подъёме", 1: "на подъёме", 0: "стабильно", -1: "на спаде"}
 
+
+def vitality_text(value: int) -> str:
+    """Описание «Жизненных сил» (РАСЧЕТ AN15): порог 27 на Matr!C12.
+
+    =CONCATENATE(Matr!C12, IF(C12>=27," Может противостоять трудностям",
+    " Плохо переживает кризисы")) — описание зашито в формулу, не в листе «текст»."""
+    return "Может противостоять трудностям" if value >= 27 else "Плохо переживает кризисы"
+
+
+def money_access_text(value: int) -> str:
+    """Описание «Доступа к деньгам» (РАСЧЕТ AN14): порог 27 на Matr!C11.
+
+    =CONCATENATE(Matr!C11, IF(C11>=27," Открыт"," Через любимое дело"))."""
+    return "Открыт" if value >= 27 else "Через любимое дело"
+
+
 # Скаляры психоматрицы: атом → подпись в pm["scalars"].
 _SCALAR_LABELS = [
     ("life_path", "Число жизненного пути (ЧЖП)"),
@@ -130,14 +146,20 @@ def render_report(report: dict, full_name: str, birth_date: date | None) -> str:
             lines.append(f"Жизнь: {c['life_task']} · Духовный уровень: {c['spiritual_level']}")
         if _want(report, "life_code"):
             lines.append(f"Код жизни: {c['life_code']}")
+            graph = c.get("life_code_graph_text")
+            if graph:
+                digit = c.get("life_code_graph_digit")
+                lines.append(f"График кода жизни (код {digit}): {_as_text(graph)}")
         if _want(report, "lucky_numbers"):
             lines.append(f"Счастливые числа: {c['lucky_numbers']}")
         if _want(report, "finance_code"):
             lines.append(f"Финансовый код удачи: {c['finance_code']}")
         if legacy:
-            lines.append(f"Доступ к деньгам: {c['money_access']}")
+            lines.append(
+                f"Доступ к деньгам: {c['money_access']} — {money_access_text(c['money_access'])}"
+            )
         if _want(report, "vitality"):
-            lines.append(f"Жизненные силы: {c['vitality']}")
+            lines.append(f"Жизненные силы: {c['vitality']} — {vitality_text(c['vitality'])}")
         if _want(report, "energy_trend"):
             trend = _ENERGY_TREND_TEXT.get(c["energy_trend"], "стабильно")
             lines.append(f"Энергетический потенциал: {trend}")
@@ -244,8 +266,15 @@ def render_report(report: dict, full_name: str, birth_date: date | None) -> str:
         ms = report["moon_sun"]
         pn = ms["personal_numbers"]
         if _want(report, "moon_sun_monthly"):
-            L.append("\n🌙 ЛУНА И СОЛНЦЕ ПО МЕСЯЦАМ")
-            L.append("\n".join(f"{m['month_name']}: {m['text']}" for m in ms["monthly"]))
+            years = ms.get("monthly_years") or [{"year": None, "monthly": ms["monthly"]}]
+            if len(years) > 1:
+                L.append("\n🌙 ЛУНА И СОЛНЦЕ ПО МЕСЯЦАМ (по годам)")
+                for yb in years:
+                    L.append(f"\n— {yb['year']}:")
+                    L.append("\n".join(f"{m['month_name']}: {m['text']}" for m in yb["monthly"]))
+            else:
+                L.append("\n🌙 ЛУНА И СОЛНЦЕ ПО МЕСЯЦАМ")
+                L.append("\n".join(f"{m['month_name']}: {m['text']}" for m in years[0]["monthly"]))
         if _want(report, "personal_year"):
             L.append(f"\n🗓 ПЕРСОНАЛЬНОЕ ЧИСЛО ГОДА: {pn['personal_year']}")
             if pn["personal_year_text"]:
