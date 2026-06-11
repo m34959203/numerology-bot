@@ -130,6 +130,12 @@ def render_report(report: dict, full_name: str, birth_date: date | None) -> str:
             lines.append(f"Жизнь: {c['life_task']} · Духовный уровень: {c['spiritual_level']}")
         if _want(report, "life_code"):
             lines.append(f"Код жизни: {c['life_code']}")
+            graph = c.get("life_code_graph_text")
+            if graph:
+                digit = c.get("life_code_graph_digit")
+                lines.append(
+                    f"Энергетический график на текущий год (код {digit}): {_as_text(graph)}"
+                )
         if _want(report, "lucky_numbers"):
             lines.append(f"Счастливые числа: {c['lucky_numbers']}")
         if _want(report, "finance_code"):
@@ -244,8 +250,15 @@ def render_report(report: dict, full_name: str, birth_date: date | None) -> str:
         ms = report["moon_sun"]
         pn = ms["personal_numbers"]
         if _want(report, "moon_sun_monthly"):
-            L.append("\n🌙 ЛУНА И СОЛНЦЕ ПО МЕСЯЦАМ")
-            L.append("\n".join(f"{m['month_name']}: {m['text']}" for m in ms["monthly"]))
+            years = ms.get("monthly_years") or [{"year": None, "monthly": ms["monthly"]}]
+            if len(years) > 1:
+                L.append("\n🌙 ЛУНА И СОЛНЦЕ ПО МЕСЯЦАМ (по годам)")
+                for yb in years:
+                    L.append(f"\n— {yb['year']}:")
+                    L.append("\n".join(f"{m['month_name']}: {m['text']}" for m in yb["monthly"]))
+            else:
+                L.append("\n🌙 ЛУНА И СОЛНЦЕ ПО МЕСЯЦАМ")
+                L.append("\n".join(f"{m['month_name']}: {m['text']}" for m in years[0]["monthly"]))
         if _want(report, "personal_year"):
             L.append(f"\n🗓 ПЕРСОНАЛЬНОЕ ЧИСЛО ГОДА: {pn['personal_year']}")
             if pn["personal_year_text"]:
