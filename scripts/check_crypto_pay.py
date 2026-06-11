@@ -78,8 +78,9 @@ def main() -> None:
         if ok:
             found = True
             name = result.get("name") or result.get("app_id") or "?"
+            bot_name = result.get("payment_processing_bot_username")
             print(f"✅ {net.upper()}: это токен Crypto Pay. Приложение: {name}")
-            print(f"   app_id={result.get('app_id')} payment_processing_bot={result.get('payment_processing_bot_username')}")
+            print(f"   app_id={result.get('app_id')} payment_processing_bot={bot_name}")
         else:
             print(f"—  {net}: не Crypto Pay / неверный токен. Ответ: {result}")
 
