@@ -35,7 +35,13 @@ build-backend = "setuptools.build_meta"
 include = ["bot*", "core*"]
 
 [tool.setuptools.package-data]
-"core.content" = ["data/*.json", "data/texts/*.json"]
+"core.content" = [
+    "data/*.json",
+    "data/texts/*.json",
+    "data/texts_kk/*.json",
+    "data/texts_en/*.json",
+    "data/i18n/*.json",
+]
 "core" = ["assets/fonts/*.ttf"]
 
 [tool.ruff]

@@ -11,7 +11,12 @@ STRINGS[locale]; недостающий ключ — fallback на русски�
 
 from __future__ import annotations
 
+import json
+from functools import cache
+from pathlib import Path
+
 BASE_LOCALE = "ru"
+_I18N_DIR = Path(__file__).parent / "content" / "data" / "i18n"
 LOCALES: tuple[str, ...] = ("ru", "kk", "en")
 LOCALE_NAMES = {"ru": "Русский", "kk": "Қазақша", "en": "English"}
 LOCALE_FLAGS = {"ru": "🇷🇺", "kk": "🇰🇿", "en": "🇬🇧"}
@@ -252,9 +257,19 @@ STRINGS: dict[str, dict[str, str]] = {
         "month.11": "ноябрь",
         "month.12": "декабрь",
     },
-    "kk": {},  # заполняется переводом (workflow лингвистов)
-    "en": {},  # заполняется переводом (workflow лингвистов)
+    # kk/en грузятся из content/data/i18n/<locale>.json (перевод лингвистов).
 }
+
+
+@cache
+def _localized(locale: str) -> dict[str, str]:
+    """Словарь строк локали: ru — встроенный; kk/en — из JSON-файла (или {})."""
+    if locale == BASE_LOCALE:
+        return STRINGS[BASE_LOCALE]
+    path = _I18N_DIR / f"{locale}.json"
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def t(key: str, locale: str | None = None) -> str:
@@ -266,7 +281,7 @@ def t(key: str, locale: str | None = None) -> str:
         from core.content.loader import current_locale
 
         locale = current_locale()
-    loc = STRINGS.get(locale or BASE_LOCALE, {})
+    loc = _localized(locale or BASE_LOCALE)
     if key in loc and loc[key]:
         return loc[key]
     return STRINGS[BASE_LOCALE][key]
