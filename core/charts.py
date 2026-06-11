@@ -58,6 +58,46 @@ def life_force_curve(curve: list[float], font: str, *, width: float = 462, heigh
     return d
 
 
+_MONTHS_SHORT = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"]
+
+
+def monthly_energy(values: list[int], font: str, *, width: float = 462, height: float = 150):
+    """«Энергетический график на текущий год» — линия помесячной энергии (Matr!CC28:CO28).
+
+    values — 12 значений энергии (matrix.monthly_energy_year), янв..дек.
+    """
+    d = Drawing(width, height)
+    lp = LinePlot()
+    lp.x, lp.y = 28, 30
+    lp.width, lp.height = width - 44, height - 50
+    lp.data = [[(i, v) for i, v in enumerate(values)]]
+    lp.lines[0].strokeColor = _ACCENT
+    lp.lines[0].strokeWidth = 1.6
+    lp.joinedLines = 1
+    lp.lines[0].symbol = None
+    lp.xValueAxis.valueMin = 0
+    lp.xValueAxis.valueMax = len(values) - 1
+    lp.xValueAxis.valueSteps = list(range(len(values)))
+    lp.xValueAxis.labelTextFormat = lambda i: _MONTHS_SHORT[int(i)] if 0 <= int(i) < 12 else ""
+    lp.xValueAxis.labels.fontName = font
+    lp.xValueAxis.labels.fontSize = 6.5
+    lp.xValueAxis.labels.fillColor = _MUTED
+    lp.xValueAxis.labels.angle = 90
+    lp.xValueAxis.labels.dy = -8
+    lp.xValueAxis.strokeColor = _RULE
+    lp.yValueAxis.valueMin = 0
+    lp.yValueAxis.valueMax = 9
+    lp.yValueAxis.valueStep = 3
+    lp.yValueAxis.labels.fontName = font
+    lp.yValueAxis.labels.fontSize = 7
+    lp.yValueAxis.labels.fillColor = _MUTED
+    lp.yValueAxis.strokeColor = _RULE
+    lp.yValueAxis.gridStrokeColor = _RULE
+    lp.yValueAxis.visibleGrid = 1
+    d.add(lp)
+    return d
+
+
 def life_code_energy(digits: list[int], font: str, *, width: float = 462, height: float = 150):
     """«График жизненной энергии» — столбцы 6 цифр кода жизни (лист 19)."""
     d = Drawing(width, height)

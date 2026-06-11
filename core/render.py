@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from datetime import UTC, date, datetime
 
+from core.numerology.matrix import monthly_energy_year
+
 TELEGRAM_LIMIT = 4096
 
 # Энергопотенциал (РАСЧЕТ J) → человекочитаемый статус.
@@ -116,7 +118,9 @@ _PSYCHO_ORDER = [
     "Целеустремлённость",
     "Качество семьянина",
     "Стабильность",
+    "Таланты",
     "Темперамент",
+    "Духовно-материальный баланс",
 ]
 
 
@@ -272,6 +276,28 @@ def render_report(report: dict, full_name: str, birth_date: date | None) -> str:
         pn = ms["personal_numbers"]
         if _want(report, "moon_sun_monthly"):
             years = ms.get("monthly_years") or [{"year": None, "monthly": ms["monthly"]}]
+            # «Энергетический график на текущий год» (Matr!CC28:CO28) — текстом по месяцам.
+            cur_year = years[0].get("year")
+            if "calculations" in report and birth_date and cur_year:
+                me = monthly_energy_year(
+                    report["calculations"]["life_code"], birth_date.year, cur_year
+                )
+                names = [
+                    "янв",
+                    "фев",
+                    "мар",
+                    "апр",
+                    "май",
+                    "июн",
+                    "июл",
+                    "авг",
+                    "сен",
+                    "окт",
+                    "ноя",
+                    "дек",
+                ]
+                L.append("\n⚡ ЭНЕРГЕТИЧЕСКИЙ ГРАФИК НА ТЕКУЩИЙ ГОД (по месяцам)")
+                L.append(" · ".join(f"{names[i]} {v}" for i, v in enumerate(me)))
             if len(years) > 1:
                 L.append("\n🌙 ЛУНА И СОЛНЦЕ ПО МЕСЯЦАМ (по годам)")
                 for yb in years:
