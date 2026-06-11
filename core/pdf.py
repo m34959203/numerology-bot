@@ -46,8 +46,10 @@ from core.render import (
     _fmt_dates,
     _val,
     _want,
+    consciousness_meaning,
     labeled_aspects,
     money_access_text,
+    thousand_code_text,
     vitality_text,
 )
 
@@ -449,6 +451,17 @@ def build_report_pdf(report: dict, full_name: str, birth_date: date | None) -> b
             _ensure_fonts()
             flow.append(Paragraph("<b>График жизненной энергии</b>", s["interp"]))
             flow.append(life_code_energy(life_code_digits(c["life_code"]), _SANS))
+        # «Код тысячника» (РАСЧЕТ C19) — только для кодов-тысячников.
+        if tc := thousand_code_text(c.get("thousand_code", 0)):
+            flow.append(Paragraph(f"<font color='#A8761F'><b>★ {_e(tc)}</b></font>", s["interp"]))
+        # Текст уровня сознания (РАСЧЕТ C21) по духовному уровню + жизненной задаче.
+        if "spiritual_level" in c and "life_task" in c:
+            _section(flow, s, "Духовный уровень")
+            flow.append(
+                Paragraph(
+                    _e(consciousness_meaning(c["spiritual_level"], c["life_task"])), s["body"]
+                )
+            )
         # Кодировка жизни: два кода со сменой по возрасту (лист 18, до/после 35 лет).
         if _want(report, "human_code"):
             _section(flow, s, "Кодировка жизни")

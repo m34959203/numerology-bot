@@ -42,6 +42,7 @@ class Codes:
     money_access: int  # доступ к деньгам (число)
     vitality: int  # жизненные силы (число)
     life_task: int  # «Жизнь» — число ненулевых цифр пула
+    thousand_code: int  # «код тысячника» (Matr!I3 = G3+H3); 0 = не тысячник
     full_years: int  # полных лет
     lived_days: int  # прожито дней
 
@@ -80,6 +81,10 @@ def compute_codes(person: PersonInput, reference_date: date | None = None) -> di
     vitality = digit_sum(int(f"{d.day}{d.month}") * d.year * 100)
     life_task = sum(1 for x in digit_pool(d) if x != 0)
 
+    # «Код тысячника» (Matr!I3 = G3 + H3): G3 = BD7 если свод(BD7) двузначный, иначе 0;
+    # H3 = BF7 если свод(BF7) двузначный, иначе 0. Двузначность свода = «код тысячника».
+    thousand_code = (spiritual if be7 > 9 else 0) + (bf7 if bg7 > 9 else 0)
+
     result = Codes(
         spiritual_level=spiritual,
         human_code=f"{spiritual}{be7}",
@@ -90,6 +95,7 @@ def compute_codes(person: PersonInput, reference_date: date | None = None) -> di
         money_access=money,
         vitality=vitality,
         life_task=life_task,
+        thousand_code=thousand_code,
         full_years=relativedelta(reference_date, d).years,
         lived_days=(reference_date - d).days,
     )
