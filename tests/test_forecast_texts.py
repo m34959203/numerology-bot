@@ -26,7 +26,7 @@ def test_new_blocks_extracted():
 def interpret_keys(topic: str) -> list[str]:
     from core.content.loader import _load_topic
 
-    return list(_load_topic(topic))
+    return list(_load_topic(topic, "ru"))
 
 
 def test_forecast_year_carries_per_value_texts():

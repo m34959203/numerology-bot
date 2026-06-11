@@ -39,7 +39,6 @@ from core.charts import life_code_energy, life_force_curve, monthly_energy
 from core.numerology.matrix import energy_curve, life_code_digits, monthly_energy_year
 from core.render import (
     _ASPECT_LABELS,
-    _ENERGY_TREND_TEXT,
     _SCALAR_LABELS,
     _age_lt_30,
     _as_text,
@@ -47,6 +46,7 @@ from core.render import (
     _val,
     _want,
     consciousness_meaning,
+    energy_trend_text,
     labeled_aspects,
     money_access_text,
     thousand_code_text,
@@ -426,9 +426,7 @@ def build_report_pdf(report: dict, full_name: str, birth_date: date | None) -> b
         if _want(report, "vitality"):
             pairs.append(("Жизненные силы", f"{c['vitality']} — {vitality_text(c['vitality'])}"))
         if _want(report, "energy_trend"):
-            pairs.append(
-                ("Энергопотенциал", _ENERGY_TREND_TEXT.get(c["energy_trend"], "стабильно"))
-            )
+            pairs.append(("Энергопотенциал", energy_trend_text(c["energy_trend"])))
         if _want(report, "danger_age"):
             danger = c["danger_age"] if c["danger_age"] is not None else "нет"
             pairs.append(("Опасный возраст", str(danger)))
@@ -590,7 +588,7 @@ def build_report_pdf(report: dict, full_name: str, birth_date: date | None) -> b
                 )
             )
             if f.get("energy_potential") is not None:
-                trend = _ENERGY_TREND_TEXT.get(f["energy_potential"], "стабильно")
+                trend = energy_trend_text(f["energy_potential"])
                 flow.append(Paragraph(f"<b>Энергетический потенциал.</b> {trend}", s["body"]))
             total = f.get("total_text") or f["year_value_text"]
             if total:

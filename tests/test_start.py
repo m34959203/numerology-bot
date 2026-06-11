@@ -33,7 +33,7 @@ async def test_start_idempotent_for_existing_user(test_db):
         assert again.id == first_id  # дубля нет
 
 
-async def test_main_menu_navigation():
+async def test_main_menu_navigation(test_db):
     q = fake_query("menu:main")
     await start.cb_main(q)
     q.message.edit_text.assert_awaited_once()
@@ -41,7 +41,7 @@ async def test_main_menu_navigation():
     q.answer.assert_awaited_once()
 
 
-async def test_help_navigation():
+async def test_help_navigation(test_db):
     q = fake_query("menu:help")
     await start.cb_help(q)
     q.message.edit_text.assert_awaited_once()

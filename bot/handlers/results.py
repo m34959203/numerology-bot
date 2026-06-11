@@ -11,7 +11,13 @@ from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMar
 from bot import keyboards, texts
 from bot.delivery import deliver_report
 from core.db import session_scope
-from core.repositories import get_or_create_user, get_result, get_survey, list_results
+from core.repositories import (
+    get_or_create_user,
+    get_result,
+    get_survey,
+    get_user_locale,
+    list_results,
+)
 
 router = Router(name="results")
 
@@ -55,10 +61,11 @@ async def cb_open_result(query: CallbackQuery) -> None:
         report = json.loads(result.payload)
         full_name = f"{survey.last_name} {survey.first_name} {survey.middle_name}" if survey else ""
         birth = survey.birth_date if survey else None
+        locale = await get_user_locale(session, query.from_user.id)
 
     await query.answer()
     try:
-        await deliver_report(query.message, report, full_name, birth)
+        await deliver_report(query.message, report, full_name, birth, locale)
     except Exception:
         logging.getLogger(__name__).exception("Сбой повторной выдачи result_id=%s", result_id)
         await query.message.answer(texts.DELIVER_ERROR, parse_mode=None)

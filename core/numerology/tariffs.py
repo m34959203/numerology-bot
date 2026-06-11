@@ -23,6 +23,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
+from core.content.loader import use_locale
 from core.numerology.person import PersonInput
 from core.numerology.report import build_report
 
@@ -219,19 +220,23 @@ def spec_for(code: str | None) -> TariffSpec:
     return TARIFFS.get(code or "", DEFAULT_SPEC)
 
 
-def report_for(person: PersonInput, reference_date: date | None, code: str | None) -> dict:
-    """Собрать отчёт под конкретный тариф (по code услуги).
+def report_for(
+    person: PersonInput, reference_date: date | None, code: str | None, locale: str = "ru"
+) -> dict:
+    """Собрать отчёт под конкретный тариф (по code услуги) на заданной локали.
 
     Возвращает структуру build_report с дополнительным ключом "_fields" —
     множеством атомов тарифа, по которому рендереры решают, что показать.
-    Для ручных тарифов (manual) расчёта нет — вызывать не следует (см. handlers).
+    Трактовки (interpret) собираются на `locale` (use_locale); недостающие на
+    языке ключи — fallback на русский. Для ручных тарифов (manual) расчёта нет.
     """
     spec = spec_for(code)
-    report = build_report(
-        person,
-        reference_date,
-        sections=spec.sections,
-        forecast_years=spec.forecast_years,
-    )
+    with use_locale(locale):
+        report = build_report(
+            person,
+            reference_date,
+            sections=spec.sections,
+            forecast_years=spec.forecast_years,
+        )
     report["_fields"] = sorted(spec.fields)
     return report
