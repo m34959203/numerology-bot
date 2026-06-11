@@ -21,13 +21,14 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
-from bot import keyboards, texts
+from bot import keyboards
 from bot.delivery import deliver_report
 from bot.states.survey import SurveyStates
 from core.db import session_scope
+from core.i18n import t
 from core.numerology import PersonInput
 from core.numerology.tariffs import report_for, spec_for
-from core.repositories import get_user_locale, save_result, save_survey
+from core.repositories import save_result, save_survey
 from core.validators import ValidationError, parse_birth_date, validate_name
 
 logger = logging.getLogger(__name__)
@@ -40,52 +41,65 @@ def _flags(data: dict) -> tuple[bool, bool]:
     return spec.needs_parents, spec.needs_name
 
 
+def _loc(data: dict) -> str:
+    """Локаль анкеты (заложена в state при старте, см. catalog/payment)."""
+    return data.get("locale", "ru")
+
+
 def _opt_date(iso: str | None) -> date | None:
     return date.fromisoformat(iso) if iso else None
 
 
 def _summary(data: dict) -> str:
     """Сводка для подтверждения — показываем только заполненные поля."""
+    loc = _loc(data)
+    gender = t("lbl.gender_female", loc) if data.get("gender") == "f" else t("lbl.gender_male", loc)
     lines = [
-        texts.CONFIRM_HEADER,
-        f"Фамилия: {data['last_name']}",
-        f"Имя: {data['first_name']}",
-        f"Отчество: {data['middle_name']}",
-        f"Дата рождения: {_opt_date(data['birth_date']).strftime('%d.%m.%Y')}",
+        t("ui.confirm_header", loc),
+        f"{t('lbl.last_name', loc)}: {data['last_name']}",
+        f"{t('lbl.first_name', loc)}: {data['first_name']}",
+        f"{t('lbl.middle_name', loc)}: {data['middle_name']}",
+        f"{t('ui.label_birth_date', loc)}: {_opt_date(data['birth_date']).strftime('%d.%m.%Y')}",
     ]
     if data.get("gender"):
-        lines.append(f"Пол: {'женский' if data['gender'] == 'f' else 'мужской'}")
+        lines.append(f"{t('ui.label_gender', loc)}: {gender}")
     if data.get("maiden_name"):
-        lines.append(f"Девичья фамилия: {data['maiden_name']}")
+        lines.append(f"{t('lbl.maiden_name', loc)}: {data['maiden_name']}")
     if data.get("mother_birth_date"):
-        lines.append(
-            f"Дата рождения матери: {_opt_date(data['mother_birth_date']).strftime('%d.%m.%Y')}"
-        )
+        md = _opt_date(data["mother_birth_date"]).strftime("%d.%m.%Y")
+        lines.append(f"{t('ui.label_mother_bd', loc)}: {md}")
     if data.get("father_birth_date"):
-        lines.append(
-            f"Дата рождения отца: {_opt_date(data['father_birth_date']).strftime('%d.%m.%Y')}"
-        )
-    return "\n".join(lines) + texts.CONFIRM_FOOTER
+        fd = _opt_date(data["father_birth_date"]).strftime("%d.%m.%Y")
+        lines.append(f"{t('ui.label_father_bd', loc)}: {fd}")
+    return "\n".join(lines) + t("ui.confirm_footer", loc)
 
 
 async def _to_confirm(message: Message, state: FSMContext) -> None:
     await state.set_state(SurveyStates.confirm)
     data = await state.get_data()
-    await message.answer(_summary(data), reply_markup=keyboards.confirm_kb(), parse_mode=None)
+    await message.answer(
+        _summary(data), reply_markup=keyboards.confirm_kb(_loc(data)), parse_mode=None
+    )
 
 
 async def _ask_gender(message: Message, state: FSMContext) -> None:
     await state.set_state(SurveyStates.gender)
-    await message.answer(texts.ASK_GENDER, reply_markup=keyboards.gender_kb(), parse_mode=None)
+    loc = _loc(await state.get_data())
+    await message.answer(
+        t("ui.ask_gender", loc), reply_markup=keyboards.gender_kb(loc), parse_mode=None
+    )
 
 
 async def _after_basics(message: Message, state: FSMContext) -> None:
     """После даты рождения: родители → пол/девичья → подтверждение (по тарифу)."""
     data = await state.get_data()
+    loc = _loc(data)
     needs_parents, needs_name = _flags(data)
     if needs_parents:
         await state.set_state(SurveyStates.mother_birth_date)
-        await message.answer(texts.ASK_MOTHER_BD, reply_markup=keyboards.skip_kb(), parse_mode=None)
+        await message.answer(
+            t("ui.ask_mother_bd", loc), reply_markup=keyboards.skip_kb(loc), parse_mode=None
+        )
     elif needs_name:
         await _ask_gender(message, state)
     else:
@@ -105,50 +119,60 @@ async def _after_parents(message: Message, state: FSMContext) -> None:
 async def cmd_cancel(message: Message, state: FSMContext) -> None:
     if await state.get_state() is None:
         return
+    loc = _loc(await state.get_data())
     await state.clear()
-    await message.answer(texts.SURVEY_CANCELLED, parse_mode=None)
+    await message.answer(t("ui.survey_cancelled", loc), parse_mode=None)
+
+
+async def _name_step(message, state, field_key, save_key, next_state, next_prompt) -> None:
+    data = await state.get_data()
+    loc = _loc(data)
+    try:
+        value = validate_name(message.text, t(field_key, loc), loc)
+    except ValidationError as e:
+        await message.answer(str(e), parse_mode=None)
+        return
+    await state.update_data(**{save_key: value})
+    await state.set_state(next_state)
+    await message.answer(t(next_prompt, loc))
 
 
 @router.message(SurveyStates.last_name, F.text)
 async def step_last_name(message: Message, state: FSMContext) -> None:
-    try:
-        value = validate_name(message.text, "Фамилия")
-    except ValidationError as e:
-        await message.answer(str(e), parse_mode=None)
-        return
-    await state.update_data(last_name=value)
-    await state.set_state(SurveyStates.first_name)
-    await message.answer(texts.ASK_FIRST_NAME)
+    await _name_step(
+        message, state, "lbl.last_name", "last_name", SurveyStates.first_name, "ui.ask_first_name"
+    )
 
 
 @router.message(SurveyStates.first_name, F.text)
 async def step_first_name(message: Message, state: FSMContext) -> None:
-    try:
-        value = validate_name(message.text, "Имя")
-    except ValidationError as e:
-        await message.answer(str(e), parse_mode=None)
-        return
-    await state.update_data(first_name=value)
-    await state.set_state(SurveyStates.middle_name)
-    await message.answer(texts.ASK_MIDDLE_NAME)
+    await _name_step(
+        message,
+        state,
+        "lbl.first_name",
+        "first_name",
+        SurveyStates.middle_name,
+        "ui.ask_middle_name",
+    )
 
 
 @router.message(SurveyStates.middle_name, F.text)
 async def step_middle_name(message: Message, state: FSMContext) -> None:
-    try:
-        value = validate_name(message.text, "Отчество")
-    except ValidationError as e:
-        await message.answer(str(e), parse_mode=None)
-        return
-    await state.update_data(middle_name=value)
-    await state.set_state(SurveyStates.birth_date)
-    await message.answer(texts.ASK_BIRTH_DATE)
+    await _name_step(
+        message,
+        state,
+        "lbl.middle_name",
+        "middle_name",
+        SurveyStates.birth_date,
+        "ui.ask_birth_date",
+    )
 
 
 @router.message(SurveyStates.birth_date, F.text)
 async def step_birth_date(message: Message, state: FSMContext) -> None:
+    loc = _loc(await state.get_data())
     try:
-        bd = parse_birth_date(message.text)
+        bd = parse_birth_date(message.text, loc)
     except ValidationError as e:
         await message.answer(str(e), parse_mode=None)
         return
@@ -158,29 +182,34 @@ async def step_birth_date(message: Message, state: FSMContext) -> None:
 
 @router.message(SurveyStates.mother_birth_date, F.text)
 async def step_mother_birth_date(message: Message, state: FSMContext) -> None:
+    loc = _loc(await state.get_data())
     try:
-        bd = parse_birth_date(message.text)
+        bd = parse_birth_date(message.text, loc)
     except ValidationError as e:
         await message.answer(str(e), parse_mode=None)
         return
     await state.update_data(mother_birth_date=bd.isoformat())
     await state.set_state(SurveyStates.father_birth_date)
-    await message.answer(texts.ASK_FATHER_BD, reply_markup=keyboards.skip_kb(), parse_mode=None)
+    await message.answer(
+        t("ui.ask_father_bd", loc), reply_markup=keyboards.skip_kb(loc), parse_mode=None
+    )
 
 
 @router.callback_query(SurveyStates.mother_birth_date, F.data == "survey:skip")
 async def skip_mother(query: CallbackQuery, state: FSMContext) -> None:
     await query.answer()
+    loc = _loc(await state.get_data())
     await state.set_state(SurveyStates.father_birth_date)
     await query.message.answer(
-        texts.ASK_FATHER_BD, reply_markup=keyboards.skip_kb(), parse_mode=None
+        t("ui.ask_father_bd", loc), reply_markup=keyboards.skip_kb(loc), parse_mode=None
     )
 
 
 @router.message(SurveyStates.father_birth_date, F.text)
 async def step_father_birth_date(message: Message, state: FSMContext) -> None:
+    loc = _loc(await state.get_data())
     try:
-        bd = parse_birth_date(message.text)
+        bd = parse_birth_date(message.text, loc)
     except ValidationError as e:
         await message.answer(str(e), parse_mode=None)
         return
@@ -199,10 +228,11 @@ async def cb_gender(query: CallbackQuery, state: FSMContext) -> None:
     gender = query.data.rsplit(":", 1)[1]  # "f" | "m"
     await state.update_data(gender=gender)
     await query.answer()
+    loc = _loc(await state.get_data())
     if gender == "f":
         await state.set_state(SurveyStates.maiden_name)
         await query.message.answer(
-            texts.ASK_MAIDEN_NAME, reply_markup=keyboards.skip_kb(), parse_mode=None
+            t("ui.ask_maiden_name", loc), reply_markup=keyboards.skip_kb(loc), parse_mode=None
         )
     else:
         await _to_confirm(query.message, state)
@@ -210,13 +240,18 @@ async def cb_gender(query: CallbackQuery, state: FSMContext) -> None:
 
 @router.message(SurveyStates.gender, F.text)
 async def gender_text_fallback(message: Message, state: FSMContext) -> None:
-    await message.answer(texts.ASK_GENDER, reply_markup=keyboards.gender_kb(), parse_mode=None)
+    loc = _loc(await state.get_data())
+    await message.answer(
+        t("ui.ask_gender", loc), reply_markup=keyboards.gender_kb(loc), parse_mode=None
+    )
 
 
 @router.message(SurveyStates.maiden_name, F.text)
 async def step_maiden_name(message: Message, state: FSMContext) -> None:
+    data = await state.get_data()
+    loc = _loc(data)
     try:
-        value = validate_name(message.text, "Девичья фамилия")
+        value = validate_name(message.text, t("lbl.maiden_name", loc), loc)
     except ValidationError as e:
         await message.answer(str(e), parse_mode=None)
         return
@@ -234,19 +269,22 @@ async def skip_maiden(query: CallbackQuery, state: FSMContext) -> None:
 async def cb_restart(query: CallbackQuery, state: FSMContext) -> None:
     data = await state.get_data()
     keep = {
-        k: data[k] for k in ("order_id", "charge_id", "service_code", "service_title") if k in data
+        k: data[k]
+        for k in ("order_id", "charge_id", "service_code", "service_title", "locale")
+        if k in data
     }
     await state.set_state(SurveyStates.last_name)
     await state.set_data(keep)
-    await query.message.answer(texts.ASK_LAST_NAME)
+    await query.message.answer(t("ui.ask_last_name", _loc(keep)))
     await query.answer()
 
 
 @router.callback_query(SurveyStates.confirm, F.data == "survey:confirm")
 async def cb_confirm(query: CallbackQuery, state: FSMContext) -> None:
     data = await state.get_data()
+    locale = _loc(data)
     await query.answer()
-    await query.message.answer(texts.CALCULATING, parse_mode=None)
+    await query.message.answer(t("ui.calculating", locale), parse_mode=None)
     order_id = data["order_id"]
 
     # Этап 1 — расчёт и сохранение. При сбое остаёмся в confirm: пользователь
@@ -262,8 +300,6 @@ async def cb_confirm(query: CallbackQuery, state: FSMContext) -> None:
             maiden_name=data.get("maiden_name") or None,
         )
         reference = datetime.now(UTC).date()
-        async with session_scope() as session:
-            locale = await get_user_locale(session, query.from_user.id)
         report = report_for(person, reference, data.get("service_code"), locale)
         full_name = f"{person.last_name} {person.first_name} {person.middle_name}"
         async with session_scope() as session:
@@ -282,7 +318,7 @@ async def cb_confirm(query: CallbackQuery, state: FSMContext) -> None:
     except Exception:
         logger.exception("Сбой расчёта/сохранения order_id=%s", order_id)
         await query.message.answer(
-            texts.CALC_ERROR, reply_markup=keyboards.confirm_kb(), parse_mode=None
+            t("ui.calc_error", locale), reply_markup=keyboards.confirm_kb(locale), parse_mode=None
         )
         return
 
@@ -294,12 +330,14 @@ async def cb_confirm(query: CallbackQuery, state: FSMContext) -> None:
         logger.exception("Сбой выдачи order_id=%s", order_id)
         await state.clear()
         await query.message.answer(
-            texts.DELIVER_ERROR, reply_markup=keyboards.to_menu_kb(), parse_mode=None
+            t("ui.deliver_error", locale),
+            reply_markup=keyboards.to_menu_kb(locale),
+            parse_mode=None,
         )
         return
 
     await state.clear()
     await query.message.answer(
-        texts.DELIVERED, reply_markup=keyboards.to_menu_kb(), parse_mode=None
+        t("ui.delivered", locale), reply_markup=keyboards.to_menu_kb(locale), parse_mode=None
     )
     logger.info("Выдан расчёт order_id=%s", order_id)

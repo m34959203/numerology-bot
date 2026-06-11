@@ -27,6 +27,7 @@ async def _make_order(test_db) -> int:
 def _precheckout(payload: str):
     q = MagicMock(name="PreCheckoutQuery")
     q.invoice_payload = payload
+    q.from_user.id = 777
     q.answer = AsyncMock()
     return q
 
