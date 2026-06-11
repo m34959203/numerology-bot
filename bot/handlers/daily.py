@@ -14,7 +14,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
-from bot import keyboards, texts
+from bot import keyboards
 from bot.states.daily import DailyStates
 from core.content.loader import use_locale
 from core.db import session_scope
@@ -29,40 +29,46 @@ logger = logging.getLogger(__name__)
 router = Router(name="daily")
 
 
-async def _start_daily(message: Message, state: FSMContext) -> None:
+async def _locale_of(user_id: int) -> str:
+    async with session_scope() as session:
+        return await get_user_locale(session, user_id)
+
+
+async def _start_daily(message: Message, state: FSMContext, locale: str) -> None:
     await state.set_state(DailyStates.birth_date)
-    await message.answer(texts.ASK_DAILY_BIRTH, parse_mode=None)
+    await message.answer(t("ui.ask_daily_birth", locale), parse_mode=None)
 
 
 @router.callback_query(F.data == "menu:daily")
 async def cb_daily(query: CallbackQuery, state: FSMContext) -> None:
     await query.answer()
-    await _start_daily(query.message, state)
+    await _start_daily(query.message, state, await _locale_of(query.from_user.id))
 
 
 @router.message(Command("day"))
 async def cmd_day(message: Message, state: FSMContext) -> None:
-    await _start_daily(message, state)
+    await _start_daily(message, state, await _locale_of(message.from_user.id))
 
 
 @router.message(DailyStates.birth_date, F.text)
 async def step_birth_date(message: Message, state: FSMContext) -> None:
+    locale = await _locale_of(message.from_user.id)
     try:
-        bd = parse_birth_date(message.text)
+        bd = parse_birth_date(message.text, locale)
     except ValidationError as e:
         await message.answer(str(e), parse_mode=None)
         return
     await state.update_data(birth_date=bd.isoformat())
     await state.set_state(DailyStates.target_date)
     await message.answer(
-        texts.ASK_DAILY_TARGET, reply_markup=keyboards.daily_today_kb(), parse_mode=None
+        t("ui.ask_daily_target", locale),
+        reply_markup=keyboards.daily_today_kb(locale),
+        parse_mode=None,
     )
 
 
-async def _deliver(message: Message, state: FSMContext, target: date) -> None:
+async def _deliver(message: Message, state: FSMContext, target: date, locale: str) -> None:
     data = await state.get_data()
-    async with session_scope() as session:
-        locale = await get_user_locale(session, message.from_user.id)
     person = PersonInput("—", "—", "—", date.fromisoformat(data["birth_date"]))
     with use_locale(locale):
         forecast = daily_forecast(person, target)
@@ -71,21 +77,23 @@ async def _deliver(message: Message, state: FSMContext, target: date) -> None:
     for chunk in split_message(text):
         await message.answer(chunk, parse_mode=None)
     await message.answer(
-        t("ui.delivered", locale), reply_markup=keyboards.to_menu_kb(), parse_mode=None
+        t("ui.delivered", locale), reply_markup=keyboards.to_menu_kb(locale), parse_mode=None
     )
 
 
 @router.callback_query(DailyStates.target_date, F.data == "daily:today")
 async def cb_today(query: CallbackQuery, state: FSMContext) -> None:
     await query.answer()
-    await _deliver(query.message, state, datetime.now(UTC).date())
+    locale = await _locale_of(query.from_user.id)
+    await _deliver(query.message, state, datetime.now(UTC).date(), locale)
 
 
 @router.message(DailyStates.target_date, F.text)
 async def step_target_date(message: Message, state: FSMContext) -> None:
+    locale = await _locale_of(message.from_user.id)
     try:
-        target = parse_target_date(message.text)
+        target = parse_target_date(message.text, locale)
     except ValidationError as e:
         await message.answer(str(e), parse_mode=None)
         return
-    await _deliver(message, state, target)
+    await _deliver(message, state, target, locale)
