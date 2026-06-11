@@ -22,13 +22,24 @@ def test_daily_matches_personal_numbers():
     pn = compute_personal_numbers(PERSON, target)
     assert fc["personal_day"] == pn["personal_day"]
     assert fc["personal_day_text"] == pn["personal_day_text"]
-    assert fc["biorhythm"] in {"травмоопасный", "критический", "благоприятный", "обычный"}
+    assert fc["biorhythm"] in {"traumatic", "critical", "favorable", "ordinary"}
+    # биоритм-циклы дня (в процентах) присутствуют
+    assert set(fc["biorhythm_cycles"]) == {"physical", "emotional", "intellectual"}
 
 
 def test_daily_changes_by_date():
     a = daily_forecast(PERSON, date(2026, 6, 10))
     b = daily_forecast(PERSON, date(2026, 6, 11))
     assert a["personal_day"] != b["personal_day"] or a["date"] != b["date"]
+
+
+def test_daily_differs_for_dates_9_apart():
+    # Дни через 9 дают одинаковый ЧПД (mod-9), но прогноз НЕ должен быть идентичным:
+    # биоритм-циклы дня различают их (регресс на жалобу «пишет одно и то же»).
+    repro = PersonInput("—", "—", "—", date(1994, 5, 28))
+    a = render_daily(daily_forecast(repro, date(2026, 6, 11)))
+    b = render_daily(daily_forecast(repro, date(2026, 6, 2)))
+    assert a != b
 
 
 def test_render_daily_has_key_blocks():

@@ -198,5 +198,13 @@
  "month_short.9": "Sep",
  "month_short.10": "Oct",
  "month_short.11": "Nov",
- "month_short.12": "Dec"
+ "month_short.12": "Dec",
+ "daily.bio_cycles": "Biorhythm cycles of the day",
+ "bio.traumatic": "accident-prone",
+ "bio.critical": "critical",
+ "bio.favorable": "favorable",
+ "bio.ordinary": "ordinary",
+ "bio.physical": "Physical",
+ "bio.emotional": "Emotional",
+ "bio.intellectual": "Intellectual"
 }

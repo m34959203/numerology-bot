@@ -198,5 +198,13 @@
  "month_short.9": "қыр",
  "month_short.10": "қаз",
  "month_short.11": "қар",
- "month_short.12": "жел"
+ "month_short.12": "жел",
+ "daily.bio_cycles": "Күннің биоырғақ циклдары",
+ "bio.traumatic": "жарақат қаупі бар",
+ "bio.critical": "сыни",
+ "bio.favorable": "қолайлы",
+ "bio.ordinary": "қалыпты",
+ "bio.physical": "Физикалық",
+ "bio.emotional": "Эмоционалдық",
+ "bio.intellectual": "Интеллектуалдық"
 }

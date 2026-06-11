@@ -360,19 +360,20 @@ def render_daily(forecast: dict, full_name: str | None = None) -> str:
     L.append(f"\n🔢 {t('daily.personal_day')}: {forecast['personal_day']}")
     if forecast["personal_day_text"]:
         L.append(_as_text(forecast["personal_day_text"]))
-    L.append(f"\n🌿 {t('daily.biorhythm')}: {forecast['biorhythm']}")
+    L.append(f"\n🌿 {t('daily.biorhythm')}: {t('bio.' + forecast['biorhythm'])}")
+    cyc = forecast.get("biorhythm_cycles")
+    if cyc:
+        L.append(
+            f"{t('bio.physical')}: {cyc['physical']:+d}% · "
+            f"{t('bio.emotional')}: {cyc['emotional']:+d}% · "
+            f"{t('bio.intellectual')}: {cyc['intellectual']:+d}%"
+        )
     L.append(
         "\n🗓 "
         + t("daily.context").format(
             year=forecast["personal_year"], month=forecast["personal_month"]
         )
     )
-    if forecast["combo_title"]:
-        L.append(f"{forecast['combo_title']}")
-        if forecast["combo_text"]:
-            L.append(_as_text(forecast["combo_text"]))
-    elif forecast["personal_month_text"]:
-        L.append(_as_text(forecast["personal_month_text"]))
     return "\n".join(L)
 
 
