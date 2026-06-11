@@ -70,31 +70,17 @@ _SCALAR_LABELS = [
     ("behavior_code", "Код поведения"),
 ]
 
-# Подписи аспектов мультиблоков (порядок = порядок диапазонов в extract_texts.py;
-# индекс 0 — общее описание, выводится без подписи). Лист «текст» строки 224/238.
-_LIFE_PATH_ASPECTS = [
-    "",
-    "Предназначение",
-    "Недостатки",
-    "Профессии",
-    "Цвет удачи",
-    "Талисман",
-    "Число удачи",
-]
-_SOUL_ASPECTS = [
-    "",
-    "Эмоциональные особенности",
-    "Недостатки",
-    "Гармоничные отношения",
-    "Счастливые числа",
-    "Враждебные числа/дни/месяцы",
-    "Счастливые даты/дни/месяцы",
-    "Счастливые камни",
-    "Счастливые цвета",
-    "Болезни",
-    "Рекомендации",
-]
-_ASPECT_LABELS = {"life_path": _LIFE_PATH_ASPECTS, "soul_number": _SOUL_ASPECTS}
+# Подписи аспектов мультиблоков — i18n-ключи (индекс 0 = общее описание без
+# подписи). Лист «текст» строки 224/238. Перевод подставляется через t() при рендере.
+_ASPECT_KEYS = {
+    "life_path": ["", *[f"aspect.life_path.{i}" for i in range(1, 7)]],
+    "soul_number": ["", *[f"aspect.soul.{i}" for i in range(1, 11)]],
+}
+
+
+def aspect_captions(atom: str) -> list[str]:
+    """Переведённые подписи аспектов мультиблока (life_path/soul_number) на текущей локали."""
+    return [t(k) if k else "" for k in _ASPECT_KEYS.get(atom, [])]
 
 
 def labeled_aspects(text, labels: list[str]) -> list[tuple[str, str]]:
@@ -168,8 +154,8 @@ def render_report(report: dict, full_name: str, birth_date: date | None) -> str:
 
     Рендерит только присутствующие секции — состав зависит от тарифа
     (см. core.numerology.tariffs)."""
-    born = f", р. {birth_date.strftime('%d.%m.%Y')}" if birth_date else ""
-    L: list[str] = [f"🔮 НУМЕРОЛОГИЧЕСКАЯ МАТРИЦА\n{full_name}{born}"]
+    born = f", {t('lbl.born')} {birth_date.strftime('%d.%m.%Y')}" if birth_date else ""
+    L: list[str] = [f"🔮 {t('sec.report_title')}\n{full_name}{born}"]
 
     legacy = report.get("_fields") is None
 
@@ -177,47 +163,53 @@ def render_report(report: dict, full_name: str, birth_date: date | None) -> str:
         c = report["calculations"]
         lines: list[str] = []
         if legacy:
-            lines.append(f"Полных лет: {c['full_years']} · Прожито дней: {c['lived_days']}")
-            lines.append(f"Жизнь: {c['life_task']} · Духовный уровень: {c['spiritual_level']}")
+            lines.append(
+                f"{t('lbl.full_years')}: {c['full_years']} · "
+                f"{t('lbl.lived_days')}: {c['lived_days']}"
+            )
+            lines.append(
+                f"{t('lbl.life')}: {c['life_task']} · "
+                f"{t('lbl.spiritual_level')}: {c['spiritual_level']}"
+            )
         if _want(report, "life_code"):
-            lines.append(f"Код жизни: {c['life_code']}")
+            lines.append(f"{t('lbl.life_code')}: {c['life_code']}")
             graph = c.get("life_code_graph_text")
             if graph:
                 digit = c.get("life_code_graph_digit")
-                lines.append(f"График кода жизни (код {digit}): {_as_text(graph)}")
+                lines.append(f"{t('lbl.life_code_graph').format(digit=digit)}: {_as_text(graph)}")
         if _want(report, "lucky_numbers"):
-            lines.append(f"Счастливые числа: {c['lucky_numbers']}")
+            lines.append(f"{t('lbl.lucky_numbers')}: {c['lucky_numbers']}")
         if _want(report, "finance_code"):
-            lines.append(f"Финансовый код удачи: {c['finance_code']}")
+            lines.append(f"{t('lbl.finance_code')}: {c['finance_code']}")
         if legacy:
             lines.append(
-                f"Доступ к деньгам: {c['money_access']} — {money_access_text(c['money_access'])}"
+                f"{t('lbl.money_access')}: {c['money_access']} — "
+                f"{money_access_text(c['money_access'])}"
             )
         if _want(report, "vitality"):
-            lines.append(f"Жизненные силы: {c['vitality']} — {vitality_text(c['vitality'])}")
+            lines.append(f"{t('lbl.vitality')}: {c['vitality']} — {vitality_text(c['vitality'])}")
         if _want(report, "energy_trend"):
-            trend = energy_trend_text(c["energy_trend"])
-            lines.append(f"Энергетический потенциал: {trend}")
+            lines.append(f"{t('lbl.energy_potential')}: {energy_trend_text(c['energy_trend'])}")
         if _want(report, "danger_age"):
-            danger = c["danger_age"] if c["danger_age"] is not None else "нет"
-            lines.append(f"Опасный возраст: {danger}")
+            danger = c["danger_age"] if c["danger_age"] is not None else t("lbl.danger_none")
+            lines.append(f"{t('lbl.danger_age')}: {danger}")
         if lines:
-            L.append("\n📊 КОДЫ И ПОКАЗАТЕЛИ")
+            L.append(f"\n📊 {t('sec.codes')}")
             L.append("\n".join(lines))
         # «Код тысячника» (РАСЧЕТ C19) — только для кодов-тысячников.
         if tc := thousand_code_text(c.get("thousand_code", 0)):
             L.append(f"\n⭐ {tc}")
         # Текст уровня сознания (РАСЧЕТ C21) по духовному уровню + жизненной задаче.
         if "spiritual_level" in c and "life_task" in c:
-            L.append("\n🧭 ДУХОВНЫЙ УРОВЕНЬ")
+            L.append(f"\n🧭 {t('sec.spiritual')}")
             L.append(consciousness_meaning(c["spiritual_level"], c["life_task"]))
         # Кодировка жизни: два кода со сменой по возрасту (лист 18, до/после 35 лет).
         if _want(report, "human_code"):
-            L.append("\n🧬 КОДИРОВКА ЖИЗНИ")
-            L.append(f"До 35 лет — код {c['human_code']}:")
+            L.append(f"\n🧬 {t('sec.life_coding')}")
+            L.append(f"{t('lbl.before_35').format(code=c['human_code'])}:")
             if c.get("human_code_text"):
                 L.append(_as_text(c["human_code_text"]))
-            L.append(f"После 35 лет — код {c['second_code']}:")
+            L.append(f"{t('lbl.after_35').format(code=c['second_code'])}:")
             if c.get("second_code_text"):
                 L.append(_as_text(c["second_code_text"]))
 
@@ -226,22 +218,24 @@ def render_report(report: dict, full_name: str, birth_date: date | None) -> str:
         q = {row["label"]: row for row in pm["qualities"]}
         sc = {row["label"]: row for row in pm["scalars"]}
         if _want(report, "psychomatrix"):
-            L.append("\n🧮 ПСИХОМАТРИЦА")
-            L.append(" · ".join(f"{lbl}: {_val(q[lbl]['value'])}" for lbl in _PSYCHO_ORDER))
+            L.append(f"\n🧮 {t('sec.psychomatrix')}")
+            L.append(
+                " · ".join(f"{t('pm.' + lbl)}: {_val(q[lbl]['value'])}" for lbl in _PSYCHO_ORDER)
+            )
             for lbl in _PSYCHO_ORDER:
                 text = q[lbl]["text"]
                 if text:
-                    L.append(f"• {lbl} ({_val(q[lbl]['value'])}): {text}")
+                    L.append(f"• {t('pm.' + lbl)} ({_val(q[lbl]['value'])}): {text}")
         for atom, label in _SCALAR_LABELS:
             if not _want(report, atom):
                 continue
             if atom == "soul_number" and not (legacy or _age_lt_30(birth_date)):
                 continue
             row = sc[label]
-            L.append(f"\n🔹 {label}: {_val(row['value'])}")
-            aspects = _ASPECT_LABELS.get(atom)
-            if aspects:
-                for cap, body in labeled_aspects(row["text"], aspects):
+            L.append(f"\n🔹 {t('lbl.' + atom)}: {_val(row['value'])}")
+            captions = aspect_captions(atom)
+            if captions:
+                for cap, body in labeled_aspects(row["text"], captions):
                     L.append(f"• {cap}: {body}" if cap else body)
             elif row["text"]:
                 L.append(_as_text(row["text"]))
@@ -249,65 +243,69 @@ def render_report(report: dict, full_name: str, birth_date: date | None) -> str:
     if "name" in report:
         nm = report["name"]
         name_parts = [
-            f"{label}: {nm[key]}"
-            for key, label in (
-                ("last_name", "Фамилия"),
-                ("first_name", "Имя"),
-                ("middle_name", "Отчество"),
-                ("maiden_name", "Девичья"),
+            f"{t(label_key)}: {nm[key]}"
+            for key, label_key in (
+                ("last_name", "lbl.last_name"),
+                ("first_name", "lbl.first_name"),
+                ("middle_name", "lbl.middle_name"),
+                ("maiden_name", "lbl.maiden_name"),
             )
             if nm[key]
         ]
         if name_parts:
-            flag = "есть" if nm["has_karma"] else "нет"
-            L.append("\n🔤 ЧИСЛО И КАРМА ИМЕНИ")
-            L.append(" · ".join(name_parts) + f"\nКарма имени: {nm['karma']} — {flag}")
+            flag = t("lbl.karma_yes") if nm["has_karma"] else t("lbl.karma_no")
+            L.append(f"\n🔤 {t('sec.name_karma')}")
+            L.append(" · ".join(name_parts) + f"\n{t('lbl.karma_name')}: {nm['karma']} — {flag}")
 
     if "karma_events" in report:
         events = [
             e for e in (report["karma_events"]["first"], report["karma_events"]["second"]) if e
         ]
         if events:
-            L.append("\n⚖️ КАРМИЧЕСКИЕ СОБЫТИЯ")
+            L.append(f"\n⚖️ {t('sec.karma_events')}")
             L.extend(f"• {e['text']}" for e in events)
 
     if "days" in report:
         days = report["days"]
-        L.append("\n📅 БЛАГОПРИЯТНЫЕ / КРИТИЧЕСКИЕ / ТРАВМООПАСНЫЕ ДНИ")
+        L.append(f"\n📅 {t('sec.days')}")
         L.append(
-            f"Благоприятные: {', '.join(_fmt_dates(days['favorable']))}\n"
-            f"Критические: {', '.join(_fmt_dates(days['critical'])) or '—'}\n"
-            f"Травмоопасные: {', '.join(_fmt_dates(days['traumatic']))}"
+            f"{t('lbl.favorable')}: {', '.join(_fmt_dates(days['favorable']))}\n"
+            f"{t('lbl.critical')}: {', '.join(_fmt_dates(days['critical'])) or '—'}\n"
+            f"{t('lbl.traumatic')}: {', '.join(_fmt_dates(days['traumatic']))}"
         )
 
     if "forecast" in report:
         fc = report["forecast"]
-        title = "ПРОГНОЗ НА ГОД" if len(fc) == 1 else f"ПРОГНОЗ НА {len(fc)} ЛЕТ"
+        title = (
+            t("sec.forecast_year") if len(fc) == 1 else t("lbl.forecast_n_years").format(n=len(fc))
+        )
         L.append(f"\n📈 {title}")
         for f in fc:
             sign = "+" if f["year_value"] >= 0 else ""
             L.append(
-                f"\n— {f['year']} (возраст {f['age']}) · личное число года "
+                f"\n— {f['year']} ({t('lbl.age')} {f['age']}) · {t('lbl.personal_year_of')} "
                 f"{f['personal_year']} — {f['personal_year_text']}"
             )
-            L.append(f"Луна {f['moon']} / Солнце {f['sun']} / ИТОГ {sign}{f['year_value']}")
+            L.append(
+                f"{t('lbl.moon')} {f['moon']} / {t('lbl.sun')} {f['sun']} / "
+                f"{t('lbl.total')} {sign}{f['year_value']}"
+            )
             if f.get("energy_potential") is not None:
-                trend = energy_trend_text(f["energy_potential"])
-                L.append(f"Энергетический потенциал: {trend}")
+                L.append(f"{t('lbl.energy_potential')}: {energy_trend_text(f['energy_potential'])}")
             total = f.get("total_text") or f["year_value_text"]
             if total:
-                L.append(f"Итог года: {_as_text(total)}")
+                L.append(f"{t('lbl.year_total')}: {_as_text(total)}")
             if f["sun"] == 0 and f.get("sun_text"):
-                L.append(f"⚠️ Нулевой период: {_as_text(f['sun_text'])}")
+                L.append(f"⚠️ {t('lbl.zero_period')}: {_as_text(f['sun_text'])}")
             if f["fate"] == "+" and f.get("rebirth_cycle_text"):
-                L.append(f"12-летний цикл перерождения: {_as_text(f['rebirth_cycle_text'])}")
+                L.append(f"{t('lbl.rebirth_cycle')}: {_as_text(f['rebirth_cycle_text'])}")
             if f.get("life_force_text"):
                 L.append(
-                    f"График кода жизни (код {f['life_force_digit']}): "
+                    f"{t('lbl.life_code_graph').format(digit=f['life_force_digit'])}: "
                     f"{_as_text(f['life_force_text'])}"
                 )
             if f["fate"] == "+":
-                L.append("Судьбоносный год.")
+                L.append(t("lbl.fateful_year"))
 
     if "moon_sun" in report:
         ms = report["moon_sun"]
@@ -320,59 +318,54 @@ def render_report(report: dict, full_name: str, birth_date: date | None) -> str:
                 me = monthly_energy_year(
                     report["calculations"]["life_code"], birth_date.year, cur_year
                 )
-                names = [
-                    "янв",
-                    "фев",
-                    "мар",
-                    "апр",
-                    "май",
-                    "июн",
-                    "июл",
-                    "авг",
-                    "сен",
-                    "окт",
-                    "ноя",
-                    "дек",
-                ]
-                L.append("\n⚡ ЭНЕРГЕТИЧЕСКИЙ ГРАФИК НА ТЕКУЩИЙ ГОД (по месяцам)")
-                L.append(" · ".join(f"{names[i]} {v}" for i, v in enumerate(me)))
+                L.append(f"\n⚡ {t('sec.monthly_energy')}")
+                L.append(" · ".join(f"{t(f'month_short.{i + 1}')} {v}" for i, v in enumerate(me)))
             if len(years) > 1:
-                L.append("\n🌙 ЛУНА И СОЛНЦЕ ПО МЕСЯЦАМ (по годам)")
+                L.append(f"\n🌙 {t('sec.moon_sun_years')}")
                 for yb in years:
                     L.append(f"\n— {yb['year']}:")
-                    L.append("\n".join(f"{m['month_name']}: {m['text']}" for m in yb["monthly"]))
+                    L.append("\n".join(f"{_month(m)}: {m['text']}" for m in yb["monthly"]))
             else:
-                L.append("\n🌙 ЛУНА И СОЛНЦЕ ПО МЕСЯЦАМ")
-                L.append("\n".join(f"{m['month_name']}: {m['text']}" for m in years[0]["monthly"]))
+                L.append(f"\n🌙 {t('sec.moon_sun')}")
+                L.append("\n".join(f"{_month(m)}: {m['text']}" for m in years[0]["monthly"]))
         if _want(report, "personal_year"):
-            L.append(f"\n🗓 ПЕРСОНАЛЬНОЕ ЧИСЛО ГОДА: {pn['personal_year']}")
+            L.append(f"\n🗓 {t('sec.personal_year')}: {pn['personal_year']}")
             if pn["personal_year_text"]:
                 L.append(_as_text(pn["personal_year_text"]))
         if _want(report, "personal_numbers"):
-            L.append("\n🗓 ЛИЧНЫЕ ЧИСЛА МЕСЯЦА И ДНЯ (на дату отчёта)")
-            L.append(f"Месяц: {pn['personal_month']} · День: {pn['personal_day']}")
+            L.append(f"\n🗓 {t('sec.personal_numbers')}")
+            L.append(
+                f"{t('lbl.month')}: {pn['personal_month']} · {t('lbl.day')}: {pn['personal_day']}"
+            )
             if pn["combo_title"]:
                 L.append(f"{pn['combo_title']}\n{pn['combo_text']}")
             if pn["personal_month_text"]:
-                L.append(f"Месяц: {pn['personal_month_text']}")
+                L.append(f"{t('lbl.month')}: {pn['personal_month_text']}")
             if pn["personal_day_text"]:
-                L.append(f"День: {pn['personal_day_text']}")
+                L.append(f"{t('lbl.day')}: {pn['personal_day_text']}")
 
     return "\n".join(L)
+
+
+def _month(m: dict) -> str:
+    """Локализованное имя месяца помесячного блока (month=1..12)."""
+    return t(f"month.{m['month']}") if m.get("month") else str(m.get("month_name", ""))
 
 
 def render_daily(forecast: dict, full_name: str | None = None) -> str:
     """Человекочитаемый прогноз на день из структуры daily.daily_forecast."""
     d = date.fromisoformat(forecast["date"]).strftime("%d.%m.%Y")
     who = f"\n{full_name}" if full_name else ""
-    L: list[str] = [f"📅 ПРОГНОЗ НА ДЕНЬ · {d}{who}"]
-    L.append(f"\n🔢 Личное число дня (ЧПД): {forecast['personal_day']}")
+    L: list[str] = [f"📅 {t('daily.title')} · {d}{who}"]
+    L.append(f"\n🔢 {t('daily.personal_day')}: {forecast['personal_day']}")
     if forecast["personal_day_text"]:
         L.append(_as_text(forecast["personal_day_text"]))
-    L.append(f"\n🌿 Биоритм дня: {forecast['biorhythm']}")
+    L.append(f"\n🌿 {t('daily.biorhythm')}: {forecast['biorhythm']}")
     L.append(
-        f"\n🗓 Контекст: личный год {forecast['personal_year']} · "
-        f"личный месяц {forecast['personal_month']}"
+        "\n🗓 "
+        + t("daily.context").format(
+            year=forecast["personal_year"], month=forecast["personal_month"]
+        )
     )
     if forecast["combo_title"]:
         L.append(f"{forecast['combo_title']}")
