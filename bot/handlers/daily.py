@@ -16,9 +16,13 @@ from aiogram.types import CallbackQuery, Message
 
 from bot import keyboards, texts
 from bot.states.daily import DailyStates
+from core.content.loader import use_locale
+from core.db import session_scope
+from core.i18n import t
 from core.numerology import PersonInput
 from core.numerology.daily import daily_forecast
 from core.render import render_daily, split_message
+from core.repositories import get_user_locale
 from core.validators import ValidationError, parse_birth_date, parse_target_date
 
 logger = logging.getLogger(__name__)
@@ -57,13 +61,18 @@ async def step_birth_date(message: Message, state: FSMContext) -> None:
 
 async def _deliver(message: Message, state: FSMContext, target: date) -> None:
     data = await state.get_data()
+    async with session_scope() as session:
+        locale = await get_user_locale(session, message.from_user.id)
     person = PersonInput("—", "—", "—", date.fromisoformat(data["birth_date"]))
-    forecast = daily_forecast(person, target)
+    with use_locale(locale):
+        forecast = daily_forecast(person, target)
+        text = render_daily(forecast)
     await state.clear()
-    text = render_daily(forecast)
     for chunk in split_message(text):
         await message.answer(chunk, parse_mode=None)
-    await message.answer(texts.DELIVERED, reply_markup=keyboards.to_menu_kb(), parse_mode=None)
+    await message.answer(
+        t("ui.delivered", locale), reply_markup=keyboards.to_menu_kb(), parse_mode=None
+    )
 
 
 @router.callback_query(DailyStates.target_date, F.data == "daily:today")

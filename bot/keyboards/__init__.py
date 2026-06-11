@@ -6,17 +6,39 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from bot import texts
 from bot.catalog_data import format_price
+from core.i18n import LOCALE_FLAGS, LOCALE_NAMES, LOCALES, t
 
 
-def main_menu() -> InlineKeyboardMarkup:
+def main_menu(locale: str = "ru") -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=texts.BTN_SERVICES, callback_data="menu:services")],
-            [InlineKeyboardButton(text=texts.BTN_DAILY, callback_data="menu:daily")],
             [
-                InlineKeyboardButton(text=texts.BTN_MY_RESULTS, callback_data="menu:results"),
-                InlineKeyboardButton(text=texts.BTN_HELP, callback_data="menu:help"),
+                InlineKeyboardButton(
+                    text=t("ui.btn_services", locale), callback_data="menu:services"
+                )
             ],
+            [InlineKeyboardButton(text=t("ui.btn_daily", locale), callback_data="menu:daily")],
+            [
+                InlineKeyboardButton(
+                    text=t("ui.btn_my_results", locale), callback_data="menu:results"
+                ),
+                InlineKeyboardButton(text=t("ui.btn_help", locale), callback_data="menu:help"),
+            ],
+            [InlineKeyboardButton(text=t("ui.btn_lang", locale), callback_data="menu:lang")],
+        ]
+    )
+
+
+def lang_menu() -> InlineKeyboardMarkup:
+    """Клавиатура выбора языка (ru/kk/en)."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=f"{LOCALE_FLAGS[loc]} {LOCALE_NAMES[loc]}", callback_data=f"lang:{loc}"
+                )
+            ]
+            for loc in LOCALES
         ]
     )
 

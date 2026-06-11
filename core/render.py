@@ -8,74 +8,58 @@ from __future__ import annotations
 
 from datetime import UTC, date, datetime
 
+from core.i18n import t
 from core.numerology.matrix import monthly_energy_year
 
 TELEGRAM_LIMIT = 4096
 
-# Энергопотенциал (РАСЧЕТ J) → человекочитаемый статус.
-_ENERGY_TREND_TEXT = {2: "на подъёме", 1: "на подъёме", 0: "стабильно", -1: "на спаде"}
+# Энергопотенциал (РАСЧЕТ J) → ключ i18n человекочитаемого статуса.
+_ENERGY_TREND_KEY = {2: "trend.up", 1: "trend.up", 0: "trend.stable", -1: "trend.down"}
+
+
+def energy_trend_text(value: int) -> str:
+    """Статус энергопотенциала (на подъёме/стабильно/на спаде) на текущей локали."""
+    return t(_ENERGY_TREND_KEY.get(value, "trend.stable"))
 
 
 def vitality_text(value: int) -> str:
-    """Описание «Жизненных сил» (РАСЧЕТ AN15): порог 27 на Matr!C12.
-
-    =CONCATENATE(Matr!C12, IF(C12>=27," Может противостоять трудностям",
-    " Плохо переживает кризисы")) — описание зашито в формулу, не в листе «текст»."""
-    return "Может противостоять трудностям" if value >= 27 else "Плохо переживает кризисы"
+    """Описание «Жизненных сил» (РАСЧЕТ AN15): порог 27 на Matr!C12 (зашито в формулу)."""
+    return t("txt.vitality_high") if value >= 27 else t("txt.vitality_low")
 
 
 def money_access_text(value: int) -> str:
-    """Описание «Доступа к деньгам» (РАСЧЕТ AN14): порог 27 на Matr!C11.
-
-    =CONCATENATE(Matr!C11, IF(C11>=27," Открыт"," Через любимое дело"))."""
-    return "Открыт" if value >= 27 else "Через любимое дело"
+    """Описание «Доступа к деньгам» (РАСЧЕТ AN14): порог 27 на Matr!C11 (зашито в формулу)."""
+    return t("txt.money_open") if value >= 27 else t("txt.money_love")
 
 
 def thousand_code_text(i3: int) -> str | None:
     """«Код тысячника» (РАСЧЕТ C19) по Matr!I3. None — не тысячник (I3 не из набора).
 
-    Тексты зашиты в формулу C19 (не в листе «текст»); набор кодов-тысячников и их
-    трактовки взяты дословно. Префикс «Код тысячника - …», суффикс «Минус – гордыня.»"""
+    Тексты зашиты в формулу C19 (не в листе «текст»); набор кодов-тысячников дословно."""
     if i3 in (37, 38):
-        body = "человек учитель, пример для других людей"
-    elif i3 == 19:
-        body = "известность через творчество"
-    elif i3 in (28, 29):
-        body = "должен оставить след в истории через творчество"
-    elif i3 == 39 or i3 >= 46:
-        body = "человек учитель, должен оставить след в истории, стать примером для других людей"
-    else:
-        return None
-    return f"Код тысячника - {body}. Минус – гордыня."
+        return t("txt.thousand_teacher")
+    if i3 == 19:
+        return t("txt.thousand_creativity")
+    if i3 in (28, 29):
+        return t("txt.thousand_history")
+    if i3 == 39 or i3 >= 46:
+        return t("txt.thousand_teacher_history")
+    return None
 
 
 def consciousness_meaning(spiritual_level: int, life_task: int) -> str:
     """Текст уровня сознания (РАСЧЕТ C21). Зашит в формулу: ступени по духовному
-    уровню (BD7=AN9) и жизненной задаче (Жизнь=AN8). Последняя ветка книги
-    `IF(AN8<AN8,…)` мертва (всегда ложь) — по политике проекта (каноническое
-    намерение, не баг) трактуем её как «иначе» → высший уровень «наблюдатель»."""
+    уровню (BD7=AN9) и жизненной задаче (Жизнь=AN8). Мёртвая ветка книги
+    `IF(AN8<AN8,…)` трактована как «иначе» → «наблюдатель» (каноническое намерение)."""
     if spiritual_level < 20:
-        return (
-            "Необходимо основное внимание уделять развитию личности, развивать волю, "
-            "совершенствовать душу и тело. Ждут земные дела, а не высшие материи."
-        )
+        return t("txt.consciousness_lt20")
     if life_task < 30:
-        return (
-            "Необходимо отработать свою земную карму, опираясь на свои истоки и опыт "
-            "предков. Нужно развивать свою интуицию, научиться управлять подсознанием."
-        )
+        return t("txt.consciousness_lt30")
     if life_task < 40:
-        return (
-            "Такие люди умеют воздействовать на сознание окружающих. Их призвание – "
-            "научить других философскому взгляду на жизнь и окружающую реальность. "
-            "Поэтому надо много учиться, чтобы иметь достаточно знаний, для обучения других."
-        )
+        return t("txt.consciousness_lt40")
     if life_task < 50:
-        return (
-            "Высший уровень сознания. Интеллектуал, философ, учитель. Необходимо стараться "
-            "и стремиться познать высшее предназначение окружающей реальности, мировые законы."
-        )
-    return "Это наблюдатель, посредник между Богом и людьми. Носитель тайной информации."
+        return t("txt.consciousness_lt50")
+    return t("txt.consciousness_observer")
 
 
 # Скаляры психоматрицы: атом → подпись в pm["scalars"].
@@ -212,7 +196,7 @@ def render_report(report: dict, full_name: str, birth_date: date | None) -> str:
         if _want(report, "vitality"):
             lines.append(f"Жизненные силы: {c['vitality']} — {vitality_text(c['vitality'])}")
         if _want(report, "energy_trend"):
-            trend = _ENERGY_TREND_TEXT.get(c["energy_trend"], "стабильно")
+            trend = energy_trend_text(c["energy_trend"])
             lines.append(f"Энергетический потенциал: {trend}")
         if _want(report, "danger_age"):
             danger = c["danger_age"] if c["danger_age"] is not None else "нет"
@@ -308,7 +292,7 @@ def render_report(report: dict, full_name: str, birth_date: date | None) -> str:
             )
             L.append(f"Луна {f['moon']} / Солнце {f['sun']} / ИТОГ {sign}{f['year_value']}")
             if f.get("energy_potential") is not None:
-                trend = _ENERGY_TREND_TEXT.get(f["energy_potential"], "стабильно")
+                trend = energy_trend_text(f["energy_potential"])
                 L.append(f"Энергетический потенциал: {trend}")
             total = f.get("total_text") or f["year_value_text"]
             if total:

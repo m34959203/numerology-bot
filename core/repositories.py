@@ -23,6 +23,18 @@ async def get_or_create_user(session: AsyncSession, telegram_id: int, name: str 
     return user
 
 
+async def get_user_locale(session: AsyncSession, telegram_id: int) -> str:
+    """Локаль пользователя (ru по умолчанию / если ещё не выбрана)."""
+    loc = await session.scalar(select(User.locale).where(User.telegram_id == telegram_id))
+    return loc or "ru"
+
+
+async def set_user_locale(session: AsyncSession, telegram_id: int, locale: str) -> None:
+    """Сохранить выбранную локаль пользователя."""
+    user = await get_or_create_user(session, telegram_id, None)
+    user.locale = locale
+
+
 async def list_active_services(session: AsyncSession) -> list[Service]:
     return list(await session.scalars(select(Service).where(Service.is_active.is_(True))))
 

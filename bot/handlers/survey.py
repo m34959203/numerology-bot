@@ -27,7 +27,7 @@ from bot.states.survey import SurveyStates
 from core.db import session_scope
 from core.numerology import PersonInput
 from core.numerology.tariffs import report_for, spec_for
-from core.repositories import save_result, save_survey
+from core.repositories import get_user_locale, save_result, save_survey
 from core.validators import ValidationError, parse_birth_date, validate_name
 
 logger = logging.getLogger(__name__)
@@ -262,7 +262,9 @@ async def cb_confirm(query: CallbackQuery, state: FSMContext) -> None:
             maiden_name=data.get("maiden_name") or None,
         )
         reference = datetime.now(UTC).date()
-        report = report_for(person, reference, data.get("service_code"))
+        async with session_scope() as session:
+            locale = await get_user_locale(session, query.from_user.id)
+        report = report_for(person, reference, data.get("service_code"), locale)
         full_name = f"{person.last_name} {person.first_name} {person.middle_name}"
         async with session_scope() as session:
             await save_survey(
@@ -287,7 +289,7 @@ async def cb_confirm(query: CallbackQuery, state: FSMContext) -> None:
     # Этап 2 — выдача. Отчёт уже сохранён, поэтому при сбое отправки чистим
     # анкету и отсылаем за ним в «Мои расчёты».
     try:
-        await deliver_report(query.message, report, full_name, person.birth_date)
+        await deliver_report(query.message, report, full_name, person.birth_date, locale)
     except Exception:
         logger.exception("Сбой выдачи order_id=%s", order_id)
         await state.clear()

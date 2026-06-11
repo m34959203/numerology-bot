@@ -21,6 +21,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, index=True)
     name: Mapped[str | None] = mapped_column(String(255))
+    locale: Mapped[str] = mapped_column(String(8), default="ru", server_default="ru")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
