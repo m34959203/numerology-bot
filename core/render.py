@@ -13,6 +13,22 @@ TELEGRAM_LIMIT = 4096
 # Энергопотенциал (РАСЧЕТ J) → человекочитаемый статус.
 _ENERGY_TREND_TEXT = {2: "на подъёме", 1: "на подъёме", 0: "стабильно", -1: "на спаде"}
 
+
+def vitality_text(value: int) -> str:
+    """Описание «Жизненных сил» (РАСЧЕТ AN15): порог 27 на Matr!C12.
+
+    =CONCATENATE(Matr!C12, IF(C12>=27," Может противостоять трудностям",
+    " Плохо переживает кризисы")) — описание зашито в формулу, не в листе «текст»."""
+    return "Может противостоять трудностям" if value >= 27 else "Плохо переживает кризисы"
+
+
+def money_access_text(value: int) -> str:
+    """Описание «Доступа к деньгам» (РАСЧЕТ AN14): порог 27 на Matr!C11.
+
+    =CONCATENATE(Matr!C11, IF(C11>=27," Открыт"," Через любимое дело"))."""
+    return "Открыт" if value >= 27 else "Через любимое дело"
+
+
 # Скаляры психоматрицы: атом → подпись в pm["scalars"].
 _SCALAR_LABELS = [
     ("life_path", "Число жизненного пути (ЧЖП)"),
@@ -133,17 +149,17 @@ def render_report(report: dict, full_name: str, birth_date: date | None) -> str:
             graph = c.get("life_code_graph_text")
             if graph:
                 digit = c.get("life_code_graph_digit")
-                lines.append(
-                    f"Энергетический график на текущий год (код {digit}): {_as_text(graph)}"
-                )
+                lines.append(f"График кода жизни (код {digit}): {_as_text(graph)}")
         if _want(report, "lucky_numbers"):
             lines.append(f"Счастливые числа: {c['lucky_numbers']}")
         if _want(report, "finance_code"):
             lines.append(f"Финансовый код удачи: {c['finance_code']}")
         if legacy:
-            lines.append(f"Доступ к деньгам: {c['money_access']}")
+            lines.append(
+                f"Доступ к деньгам: {c['money_access']} — {money_access_text(c['money_access'])}"
+            )
         if _want(report, "vitality"):
-            lines.append(f"Жизненные силы: {c['vitality']}")
+            lines.append(f"Жизненные силы: {c['vitality']} — {vitality_text(c['vitality'])}")
         if _want(report, "energy_trend"):
             trend = _ENERGY_TREND_TEXT.get(c["energy_trend"], "стабильно")
             lines.append(f"Энергетический потенциал: {trend}")

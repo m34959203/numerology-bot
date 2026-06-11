@@ -113,11 +113,11 @@ def build_calculations_section(person: PersonInput, reference_date: date | None 
     section = compute_codes(person, reference_date)
     section["danger_age"] = danger_age(person, reference_date)
     section["energy_trend"] = current_energy_trend(person, reference_date)
-    # Описание кода жизни за текущий год = активная цифра графика кода жизни
-    # (life_force_graph) для текущего возраста. В источнике отдельного «описания
-    # кода жизни» нет — это тот же график, что в прогнозе по годам, но за «сейчас».
-    # По фидбэку заказчицы (11.06.2026): код жизни должен идти с описанием, а на
-    # годовом прогнозе — с графиком за текущий год.
+    # «Код жизни» в РАСЧЕТ — это число (AN11=Matr!BI7), а ячейка ссылается на
+    # описание = лист 19 «График кода жизни»: D36=VLOOKUP(F37, текст!B213:C222),
+    # где F37=INDEX(код_жизни_цифры, age%6) — активная цифра графика за текущий
+    # возраст. Канонический ярлык блока — «График кода жизни» (текст!B212).
+    # Разворачиваем эту ссылку инлайном под числом (фидбэк заказчицы 11.06.2026).
     graph_digit = life_code_graph_digit(section["life_code"], section["full_years"])
     section["life_code_graph_digit"] = graph_digit
     section["life_code_graph_text"] = interpret("life_force_graph", graph_digit)

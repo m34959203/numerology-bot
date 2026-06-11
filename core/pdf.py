@@ -45,6 +45,8 @@ from core.render import (
     _val,
     _want,
     labeled_aspects,
+    money_access_text,
+    vitality_text,
 )
 
 # --- палитра (RGB для печати; OKLCH-логика подобрана на глаз) ----------------
@@ -413,9 +415,10 @@ def build_report_pdf(report: dict, full_name: str, birth_date: date | None) -> b
         if _want(report, "finance_code"):
             pairs.append(("Финансовый код удачи", str(c["finance_code"])))
         if legacy:
-            pairs.append(("Доступ к деньгам", str(c["money_access"])))
+            ma = c["money_access"]
+            pairs.append(("Доступ к деньгам", f"{ma} — {money_access_text(ma)}"))
         if _want(report, "vitality"):
-            pairs.append(("Жизненные силы", str(c["vitality"])))
+            pairs.append(("Жизненные силы", f"{c['vitality']} — {vitality_text(c['vitality'])}"))
         if _want(report, "energy_trend"):
             pairs.append(
                 ("Энергопотенциал", _ENERGY_TREND_TEXT.get(c["energy_trend"], "стабильно"))
@@ -426,13 +429,13 @@ def build_report_pdf(report: dict, full_name: str, birth_date: date | None) -> b
         if pairs:
             _section(flow, s, "Коды от даты рождения")
             flow.append(_kv_table(s, pairs))
-        # Энергетический график на текущий год под «Код жизни» (паритет с текстом,
-        # фидбэк заказчицы 11.06.2026: код жизни идёт с описанием за «сейчас»).
+        # «График кода жизни» под числом «Код жизни» — разворот ссылки-на-описание
+        # из РАСЧЕТ (лист 19, текст!B212), паритет с текстом (фидбэк 11.06.2026).
         if _want(report, "life_code") and c.get("life_code_graph_text"):
             digit = c.get("life_code_graph_digit")
             flow.append(
                 Paragraph(
-                    f"<b>Энергетический график на текущий год (код {digit}).</b> "
+                    f"<b>График кода жизни (код {digit}).</b> "
                     f"{_e(_as_text(c['life_code_graph_text']))}",
                     s["body"],
                 )
@@ -596,9 +599,7 @@ def build_report_pdf(report: dict, full_name: str, birth_date: date | None) -> b
                     )
                     for m in yb["monthly"]:
                         flow.append(
-                            Paragraph(
-                                f"<b>{_e(m['month_name'])}.</b> {_e(m['text'])}", s["interp"]
-                            )
+                            Paragraph(f"<b>{_e(m['month_name'])}.</b> {_e(m['text'])}", s["interp"])
                         )
             else:
                 _section(flow, s, "Луна и Солнце по месяцам")
