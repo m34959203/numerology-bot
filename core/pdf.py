@@ -35,6 +35,8 @@ from reportlab.platypus import (
 from reportlab.platypus.doctemplate import NextPageTemplate
 
 from bot.config import settings
+from core.charts import life_code_energy, life_force_curve
+from core.numerology.matrix import energy_curve, life_code_digits
 from core.render import (
     _ASPECT_LABELS,
     _ENERGY_TREND_TEXT,
@@ -440,6 +442,11 @@ def build_report_pdf(report: dict, full_name: str, birth_date: date | None) -> b
                     s["body"],
                 )
             )
+        # «График жизненной энергии» (лист 19, F21:K21) — столбцы 6 цифр кода жизни.
+        if _want(report, "life_code"):
+            _ensure_fonts()
+            flow.append(Paragraph("<b>График жизненной энергии</b>", s["interp"]))
+            flow.append(life_code_energy(life_code_digits(c["life_code"]), _SANS))
         # Кодировка жизни: два кода со сменой по возрасту (лист 18, до/после 35 лет).
         if _want(report, "human_code"):
             _section(flow, s, "Кодировка жизни")
@@ -544,6 +551,11 @@ def build_report_pdf(report: dict, full_name: str, birth_date: date | None) -> b
     if "forecast" in report:
         fc = report["forecast"]
         _section(flow, s, "Прогноз на год" if len(fc) == 1 else f"Прогноз на {len(fc)} лет")
+        # «График жизненных сил по годам» (Matr!BE59:BE158) — энергокривая 0..99.
+        if "calculations" in report:
+            _ensure_fonts()
+            flow.append(Paragraph("<b>График жизненных сил по годам</b>", s["interp"]))
+            flow.append(life_force_curve(energy_curve(report["calculations"]["life_code"]), _SANS))
         for f in fc:
             sign = "+" if f["year_value"] >= 0 else ""
             head = (
@@ -558,9 +570,15 @@ def build_report_pdf(report: dict, full_name: str, birth_date: date | None) -> b
                     s["body"],
                 )
             )
+            if f.get("energy_potential") is not None:
+                trend = _ENERGY_TREND_TEXT.get(f["energy_potential"], "стабильно")
+                flow.append(Paragraph(f"<b>Энергетический потенциал.</b> {trend}", s["body"]))
             total = f.get("total_text") or f["year_value_text"]
             if total:
                 flow.append(Paragraph(f"<b>Итог года.</b> {_e(_as_text(total))}", s["body"]))
+            if f["fate"] == "+" and f.get("rebirth_cycle_text"):
+                rc = _e(_as_text(f["rebirth_cycle_text"]))
+                flow.append(Paragraph(f"<b>12-летний цикл перерождения.</b> {rc}", s["body"]))
             if f["sun"] == 0 and f.get("sun_text"):
                 flow.append(
                     Paragraph(

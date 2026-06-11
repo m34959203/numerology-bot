@@ -165,6 +165,20 @@ def current_energy_trend(person: PersonInput, reference_date: date | None = None
     return energy_potential(age, anchors)
 
 
+def energy_curve(life_code: str, max_age: int = 99) -> list[float]:
+    """Энергокривая «График жизненных сил по годам» (Matr!BE59:BE158).
+
+    Значение энергии на каждый возраст 0..max_age (линейная интерполяция опор
+    каждые 7 лет). Сверено 1:1 с книгой (100 точек, нулевое расхождение)."""
+    anchors = _energy_anchors(life_code)
+    return [_energy(a, anchors) for a in range(max_age + 1)]
+
+
+def life_code_digits(life_code: str) -> list[int]:
+    """6 цифр кода жизни — данные «Графика жизненной энергии» (лист 19, F21:K21)."""
+    return [int(c) for c in str(life_code).zfill(6)[:6]]
+
+
 def life_code_graph_digit(life_code: str, age: int) -> int:
     """Цифра «графика кода жизни» на возраст (лист 19, сверено с формулами).
 

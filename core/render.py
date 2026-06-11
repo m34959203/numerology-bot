@@ -249,11 +249,16 @@ def render_report(report: dict, full_name: str, birth_date: date | None) -> str:
                 f"{f['personal_year']} — {f['personal_year_text']}"
             )
             L.append(f"Луна {f['moon']} / Солнце {f['sun']} / ИТОГ {sign}{f['year_value']}")
+            if f.get("energy_potential") is not None:
+                trend = _ENERGY_TREND_TEXT.get(f["energy_potential"], "стабильно")
+                L.append(f"Энергетический потенциал: {trend}")
             total = f.get("total_text") or f["year_value_text"]
             if total:
                 L.append(f"Итог года: {_as_text(total)}")
             if f["sun"] == 0 and f.get("sun_text"):
                 L.append(f"⚠️ Нулевой период: {_as_text(f['sun_text'])}")
+            if f["fate"] == "+" and f.get("rebirth_cycle_text"):
+                L.append(f"12-летний цикл перерождения: {_as_text(f['rebirth_cycle_text'])}")
             if f.get("life_force_text"):
                 L.append(
                     f"График кода жизни (код {f['life_force_digit']}): "
