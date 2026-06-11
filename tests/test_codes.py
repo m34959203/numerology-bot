@@ -20,3 +20,18 @@ def test_codes_match_excel():
             assert (
                 got[key] == exp
             ), f"{case['birth_date']} {key}: получили {got[key]!r}, эталон {exp!r}"
+
+
+def test_thousand_code_and_consciousness():
+    """C19 (код тысячника = Matr!I3) и C21 (текст уровня сознания). Эталон
+    Ерофеева Ю.В. 20.02.1990: I3=19 (сверено с книгой), уровень сознания —
+    «земная карма» (духовный уровень 23 ≥ 20, жизненная задача 11 < 30)."""
+    from core.render import consciousness_meaning, thousand_code_text
+
+    c = compute_codes(PersonInput("", "", None, date(1990, 2, 20)), date(2026, 6, 6))
+    assert c["thousand_code"] == 19
+    assert thousand_code_text(19).startswith("Код тысячника - известность через творчество")
+    assert thousand_code_text(0) is None  # не тысячник
+    assert thousand_code_text(46).startswith("Код тысячника - человек учитель, должен оставить")
+    assert consciousness_meaning(23, 11).startswith("Необходимо отработать свою земную карму")
+    assert consciousness_meaning(15, 11).startswith("Необходимо основное внимание уделять")
