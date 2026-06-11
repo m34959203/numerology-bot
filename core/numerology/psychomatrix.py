@@ -65,8 +65,9 @@ class Psychomatrix:
     family_quality: int  # качество семьянина = c2+c5+c8
     attitude_to_labor: int  # отношение к труду = c4+c5+c6
     stability: int  # стабильность = c3+c6+c9
-    talents: int  # таланты = c7+c8+c9
+    talents: int  # таланты = c7+c8+c9 (calc!W27)
     temperament: int  # темперамент = c3+c5+c7
+    spiritual_material_balance: int  # духовно-материальный баланс = диагональ c1+c5+c9 (Matr!F18)
     # Скаляры
     soul_number: int  # число души = день рождения (calc!F1)
     consciousness_level: int  # уровень сознания (calc!C1)
@@ -113,6 +114,7 @@ def compute_psychomatrix(person: PersonInput) -> dict:
         stability=c[3] + c[6] + c[9],
         talents=c[7] + c[8] + c[9],
         temperament=c[3] + c[5] + c[7],
+        spiritual_material_balance=c[1] + c[5] + c[9],
         soul_number=d.day,
         consciousness_level=consciousness,
         life_path=reduce_1_9(e19),

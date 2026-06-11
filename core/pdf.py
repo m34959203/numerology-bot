@@ -35,8 +35,8 @@ from reportlab.platypus import (
 from reportlab.platypus.doctemplate import NextPageTemplate
 
 from bot.config import settings
-from core.charts import life_code_energy, life_force_curve
-from core.numerology.matrix import energy_curve, life_code_digits
+from core.charts import life_code_energy, life_force_curve, monthly_energy
+from core.numerology.matrix import energy_curve, life_code_digits, monthly_energy_year
 from core.render import (
     _ASPECT_LABELS,
     _ENERGY_TREND_TEXT,
@@ -100,7 +100,9 @@ _PSYCHO_ORDER = [
     "Целеустремлённость",
     "Качество семьянина",
     "Стабильность",
+    "Таланты",
     "Темперамент",
+    "Духовно-материальный баланс",
 ]
 # Квадрат Пифагора: позиция в сетке → (индекс качества 0..8, короткая подпись).
 # Раскладка столбцами 1-2-3 / 4-5-6 / 7-8-9 (канон).
@@ -470,7 +472,11 @@ def build_report_pdf(report: dict, full_name: str, birth_date: date | None) -> b
         if _want(report, "psychomatrix"):
             _section(flow, s, "Психоматрица · квадрат Пифагора")
             flow.append(_psychomatrix_grid(s, q))
-            flow.append(Spacer(1, 12))
+            flow.append(Spacer(1, 8))
+            # Производные качества (суммы рядов/столбцов/диагоналей) — числами, как в РАСЧЕТ.
+            derived = " · ".join(f"{lbl} {_val(q[lbl]['value'])}" for lbl in _PSYCHO_ORDER[9:])
+            flow.append(Paragraph(f"<font color='#6B6E84'>{_e(derived)}</font>", s["body"]))
+            flow.append(Spacer(1, 6))
             for lbl in _PSYCHO_ORDER:
                 text = q[lbl]["text"]
                 if text:
@@ -604,6 +610,15 @@ def build_report_pdf(report: dict, full_name: str, birth_date: date | None) -> b
         pn = ms["personal_numbers"]
         if _want(report, "moon_sun_monthly"):
             years = ms.get("monthly_years") or [{"year": None, "monthly": ms["monthly"]}]
+            # «Энергетический график на текущий год» (Matr!CC28:CO28) — помесячная энергия.
+            cur_year = years[0].get("year")
+            if "calculations" in report and birth_date and cur_year:
+                _ensure_fonts()
+                me = monthly_energy_year(
+                    report["calculations"]["life_code"], birth_date.year, cur_year
+                )
+                _section(flow, s, "Энергетический график на текущий год")
+                flow.append(monthly_energy(me, _SANS))
             if len(years) > 1:
                 # Пятилетний прогноз: Луна/Солнце по месяцам на все годы (фидбэк 11.06.2026).
                 _section(flow, s, "Луна и Солнце по месяцам · по годам")

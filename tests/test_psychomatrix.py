@@ -44,3 +44,11 @@ def test_two_digit_day_month():
     assert r["consciousness_level"] == 15 + 12 + (1 + 9 + 9 + 0)
     assert r["soul_number"] == 15
     assert r["behavior_code"]  # код поведения определён для любой даты
+
+
+def test_derived_qualities_talents_and_balance():
+    """Таланты (calc!W27 = c7+c8+c9) и духовно-материальный баланс (Matr!F18 =
+    диагональ c1+c5+c9). Эталон Ерофеева Ю.В. 20.02.1990 = 3 и 7 (сверено с книгой)."""
+    r = compute_psychomatrix(PersonInput("", "", None, date(1990, 2, 20)))
+    assert r["talents"] == 3
+    assert r["spiritual_material_balance"] == 7

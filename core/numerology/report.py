@@ -28,7 +28,7 @@ from core.numerology.person import PersonInput
 from core.numerology.psychomatrix import compute_psychomatrix
 
 # (поле психоматрицы, подпись, тема трактовки). 0 → ключ «нет» (как в РАСЧЕТ).
-_PSYCHO_ROWS: list[tuple[str, str, str]] = [
+_PSYCHO_ROWS: list[tuple[str, str, str | None]] = [
     ("character", "Характер", "character"),
     ("energy", "Энергия", "energy"),
     ("interest", "Интерес", "interest"),
@@ -43,7 +43,9 @@ _PSYCHO_ROWS: list[tuple[str, str, str]] = [
     ("purposefulness", "Целеустремлённость", "purposefulness"),
     ("family_quality", "Качество семьянина", "family_quality"),
     ("stability", "Стабильность", "stability"),
+    ("talents", "Таланты", None),  # calc!W27 = c7+c8+c9; в книге выводится числом
     ("temperament", "Темперамент", "temperament"),
+    ("spiritual_material_balance", "Духовно-материальный баланс", "spiritual_material_balance"),
 ]
 
 
@@ -63,7 +65,7 @@ def build_psychomatrix_section(person: PersonInput) -> dict:
             {
                 "label": label,
                 "value": value,
-                "text": interpret(topic, _psycho_key(value)),
+                "text": interpret(topic, _psycho_key(value)) if topic else None,
             }
         )
 

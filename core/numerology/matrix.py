@@ -179,6 +179,23 @@ def life_code_digits(life_code: str) -> list[int]:
     return [int(c) for c in str(life_code).zfill(6)[:6]]
 
 
+def monthly_energy_year(life_code: str, birth_year: int, year: int) -> list[int]:
+    """«Энергетический график на текущий год» (Matr!CC28:CO28) — энергия по месяцам.
+
+    Реверс-инжиниринг цепочки Matr (ряды 10–14), сверено с книгой 1:1 (36/36):
+    энергия месяца m = свод1( anchor[((m−2) mod 12) mod 5] + годобаза ), где
+    anchor = первые 5 цифр кода жизни, годобаза = ((year − год_рожд) mod 9) + 1.
+    Месяцы Янв..Дек (Янв → позиция 11, Фев → 0; см. начало нумерол. года с февраля).
+    свод1 = сумма цифр для 2-значного (макс 9+9=18 → 9)."""
+    anchors = [int(c) for c in str(life_code)[:5]]
+    yearbase = (year - birth_year) % 9 + 1
+    out: list[int] = []
+    for month in range(1, 13):
+        s = anchors[((month - 2) % 12) % 5] + yearbase
+        out.append(s if s <= 9 else s - 9)
+    return out
+
+
 def life_code_graph_digit(life_code: str, age: int) -> int:
     """Цифра «графика кода жизни» на возраст (лист 19, сверено с формулами).
 
