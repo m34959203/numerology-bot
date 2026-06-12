@@ -32,6 +32,7 @@
  "ui.confirm_footer": "\nIs everything correct?",
  "ui.pay_success": "Payment received ✅\nNow just fill in the questionnaire — it only takes a minute.",
  "ui.pay_success_imitation": "✅ Payment completed (test mode).\nNow just fill in the questionnaire — it only takes a minute.",
+ "ui.pay_success_manual": "Payment received ✅\nThis reading is prepared individually — the specialist will contact you here in Telegram, confirm your details and send the result manually (usually within a day). Thank you!",
  "ui.survey_cancelled": "Questionnaire cancelled. Your payment is saved: you can return to it anytime from “My readings”.",
  "ui.no_results": "Your reports will appear here.\nTo order your first one, tap “Order a reading”.",
  "ui.calculating": "Calculating your matrix… ⏳",
