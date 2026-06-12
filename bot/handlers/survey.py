@@ -84,7 +84,7 @@ async def _notify_master(
     client_name: str,
     client_username: str | None,
 ) -> None:
-    """Сообщить мастеру (ADMIN_IDS) об оплаченном ручном тарифе — для связи с клиентом."""
+    """Сообщить мастеру (MASTER_CHAT_ID, иначе ADMIN_IDS) об оплаченном ручном тарифе."""
     handle = f"@{client_username}" if client_username else f"id {client_id}"
     text = (
         "🔔 Оплачен ручной тариф — нужна ваша подготовка.\n"
@@ -92,11 +92,11 @@ async def _notify_master(
         f"Клиент: {client_name} ({handle})\n"
         f"Свяжитесь с клиентом для уточнения данных и выдачи разбора."
     )
-    for admin_id in settings.admin_id_list:
+    for chat_id in settings.master_chat_id_list:
         try:
-            await bot.send_message(admin_id, text)
+            await bot.send_message(chat_id, text)
         except Exception:
-            logger.exception("Не удалось уведомить мастера admin_id=%s", admin_id)
+            logger.exception("Не удалось уведомить мастера chat_id=%s", chat_id)
 
 
 async def deliver_after_payment(

@@ -10,6 +10,10 @@ class Settings(BaseSettings):
 
     bot_token: str = "123456:CHANGE_ME"
     admin_ids: str = ""
+    # Чат(ы) мастера для заявок на ручные тарифы (детские/совместимость).
+    # Запятая-разделитель. Пусто → заявки уходят в ADMIN_IDS. Мастер должен
+    # один раз нажать Start у бота, иначе Telegram не даст боту ему написать.
+    master_chat_id: str = ""
     database_url: str = "postgresql+asyncpg://numerology:CHANGE_ME@localhost:5432/numerology"
 
     excel_source_path: str = "./ПРОГРАММА_МАТРИЦА_на_русском.xlsx"
@@ -44,6 +48,12 @@ class Settings(BaseSettings):
     @property
     def admin_id_list(self) -> list[int]:
         return [int(x) for x in self.admin_ids.split(",") if x.strip()]
+
+    @property
+    def master_chat_id_list(self) -> list[int]:
+        """Куда слать заявки на ручные разборы. Пустой MASTER_CHAT_ID → fallback на админов."""
+        ids = [int(x) for x in self.master_chat_id.split(",") if x.strip()]
+        return ids or self.admin_id_list
 
     @property
     def crypto_pay_enabled(self) -> bool:

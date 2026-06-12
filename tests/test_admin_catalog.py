@@ -119,4 +119,35 @@ async def test_pay_manual_tariff_notifies_master_without_survey(test_db, monkeyp
     q.message.answer.assert_awaited_once()  # только подтверждение оплаты
     q.message.answer_invoice.assert_not_awaited()
     q.message.bot.send_message.assert_awaited_once()  # мастер уведомлён
-    assert q.message.bot.send_message.await_args.args[0] == 777
+    assert q.message.bot.send_message.await_args.args[0] == 777  # fallback на ADMIN_IDS
+
+
+async def test_master_chat_id_routes_notification(test_db, monkeypatch):
+    # При заданном MASTER_CHAT_ID заявка уходит мастеру, а не в ADMIN_IDS.
+    monkeypatch.setattr(settings, "payment_imitation", True)
+    monkeypatch.setattr(settings, "crypto_pay_token", "")
+    monkeypatch.setattr(settings, "admin_ids", "777")
+    monkeypatch.setattr(settings, "master_chat_id", "555")
+    async with test_db() as s:
+        await repo.seed_services(
+            s,
+            [
+                {
+                    "code": "compatibility",
+                    "title": "Совместимость",
+                    "description": "x",
+                    "price_tenge": 15000,
+                    "price_stars": 1500,
+                }
+            ],
+        )
+        svc_id = (await repo.list_active_services(s))[0].id
+        await s.commit()
+
+    q = fake_query(f"pay:{svc_id}")
+    q.message.bot = MagicMock()
+    q.message.bot.send_message = AsyncMock()
+    await catalog.cb_pay(q, make_state())
+
+    q.message.bot.send_message.assert_awaited_once()
+    assert q.message.bot.send_message.await_args.args[0] == 555  # мастер, не админ
