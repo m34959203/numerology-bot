@@ -15,6 +15,7 @@ from bot.handlers import (
     admin,
     catalog,
     daily,
+    diag,
     language,
     payment,
     results,
@@ -41,6 +42,7 @@ def build_dispatcher() -> Dispatcher:
         survey.router,
         results.router,
         admin.router,
+        diag.router,
     )
     return dp
 
