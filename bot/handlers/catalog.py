@@ -17,11 +17,10 @@ from aiogram.types import CallbackQuery, LabeledPrice
 from bot import keyboards
 from bot.catalog_data import format_price
 from bot.config import settings
-from bot.states.survey import SurveyStates
+from bot.handlers.survey import deliver_after_payment
 from core.db import session_scope
 from core.i18n import t
 from core.models import Order
-from core.numerology.tariffs import spec_for
 from core.repositories import (
     create_order,
     get_or_create_user,
@@ -65,8 +64,6 @@ async def cb_service_card(query: CallbackQuery) -> None:
     if service is None or not service.is_active:
         await query.answer(t("ui.service_unavailable", locale), show_alert=True)
         return
-    spec = spec_for(service.code)
-    contact_url = spec.contact_url if spec.manual else None
     title = _svc_text(service.code, service.title, "title", locale)
     desc = _svc_text(service.code, service.description, "desc", locale)
     text = (
@@ -74,11 +71,10 @@ async def cb_service_card(query: CallbackQuery) -> None:
         f"{escape(desc)}\n\n"
         f"{escape(t('ui.price', locale))}: {format_price(service.price_tenge)}"
     )
+    # Все тарифы оплачиваются в боте; ручные после оплаты обслуживает мастер.
     await query.message.edit_text(
         text,
-        reply_markup=keyboards.service_card_kb(
-            service.id, service.price_tenge, contact_url, locale
-        ),
+        reply_markup=keyboards.service_card_kb(service.id, service.price_tenge, locale),
         parse_mode="HTML",
     )
     await query.answer()
@@ -92,10 +88,6 @@ async def cb_pay(query: CallbackQuery, state: FSMContext) -> None:
         locale = await get_user_locale(session, query.from_user.id)
         if service is None or not service.is_active:
             await query.answer(t("ui.service_unavailable", locale), show_alert=True)
-            return
-        if spec_for(service.code).manual:
-            # Ручные тарифы оплачиваются не в боте — клиента ведут к мастеру.
-            await query.answer(t("ui.manual_at_master", locale), show_alert=True)
             return
         user = await get_or_create_user(session, query.from_user.id, query.from_user.full_name)
         order = await create_order(session, user.id, service.id)
@@ -123,6 +115,7 @@ async def cb_pay(query: CallbackQuery, state: FSMContext) -> None:
         title=t("ui.payment_title", locale),
         description=_svc_text(code, title, "title", locale),
         payload=str(order_id),
+        provider_token="",
         currency="XTR",
         prices=[LabeledPrice(label=t("ui.payment_title", locale), amount=price_stars)],
     )
@@ -154,14 +147,17 @@ async def _imitate_payment(
             order.status = "paid"
 
     logger.info("ИМИТАЦИЯ оплаты order_id=%s charge_id=%s", order_id, charge_id)
-    await state.set_state(SurveyStates.last_name)
-    await state.update_data(
+    await deliver_after_payment(
+        query.message,
+        state,
+        client_id=query.from_user.id,
+        client_name=query.from_user.full_name,
+        client_username=getattr(query.from_user, "username", None),
         order_id=order_id,
         charge_id=charge_id,
         service_code=code,
         service_title=title,
         locale=locale,
+        success_key="ui.pay_success_imitation",
     )
-    await query.message.answer(t("ui.pay_success_imitation", locale))
-    await query.message.answer(t("ui.ask_last_name", locale))
     await query.answer()

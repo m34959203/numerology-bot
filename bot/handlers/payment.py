@@ -13,7 +13,7 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, PreCheckoutQuery
 
-from bot.states.survey import SurveyStates
+from bot.handlers.survey import deliver_after_payment
 from core.db import session_scope
 from core.i18n import t
 from core.models import Order
@@ -57,13 +57,15 @@ async def on_successful_payment(message: Message, state: FSMContext) -> None:
         locale = await get_user_locale(session, message.from_user.id)
 
     logger.info("Платёж принят order_id=%s charge_id=%s", order_id, charge_id)
-    await state.set_state(SurveyStates.last_name)
-    await state.update_data(
+    await deliver_after_payment(
+        message,
+        state,
+        client_id=message.from_user.id,
+        client_name=message.from_user.full_name,
+        client_username=getattr(message.from_user, "username", None),
         order_id=order_id,
         charge_id=charge_id,
         service_code=service.code if service else "",
         service_title=service.title if service else "",
         locale=locale,
     )
-    await message.answer(t("ui.pay_success", locale))
-    await message.answer(t("ui.ask_last_name", locale))
