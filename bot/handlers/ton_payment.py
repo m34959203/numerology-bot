@@ -17,7 +17,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 
 from bot.config import settings
-from bot.handlers.survey import begin_survey
+from bot.handlers.survey import deliver_after_payment
 from core.db import session_scope
 from core.i18n import t
 from core.models import Order
@@ -106,10 +106,12 @@ async def cb_check(query: CallbackQuery, state: FSMContext) -> None:
 
     logger.info("TON оплата принята order_id=%s invoice_id=%s", order_id, invoice_id)
     await query.answer()
-    await query.message.answer(t("ui.pay_success", locale))
-    await begin_survey(
+    await deliver_after_payment(
         query.message,
         state,
+        client_id=query.from_user.id,
+        client_name=query.from_user.full_name,
+        client_username=getattr(query.from_user, "username", None),
         order_id=order_id,
         charge_id=charge_id,
         service_code=code,

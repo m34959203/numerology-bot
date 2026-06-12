@@ -22,6 +22,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from bot import keyboards
+from bot.config import settings
 from bot.delivery import deliver_report
 from bot.states.survey import SurveyStates
 from core.db import session_scope
@@ -72,6 +73,72 @@ async def begin_survey(
         locale=locale,
     )
     await message.answer(t("ui.ask_last_name", locale))
+
+
+async def _notify_master(
+    bot,
+    *,
+    order_id: int,
+    service_title: str,
+    client_id: int,
+    client_name: str,
+    client_username: str | None,
+) -> None:
+    """Сообщить мастеру (MASTER_CHAT_ID, иначе ADMIN_IDS) об оплаченном ручном тарифе."""
+    handle = f"@{client_username}" if client_username else f"id {client_id}"
+    text = (
+        "🔔 Оплачен ручной тариф — нужна ваша подготовка.\n"
+        f"Заказ #{order_id}: {service_title}\n"
+        f"Клиент: {client_name} ({handle})\n"
+        f"Свяжитесь с клиентом для уточнения данных и выдачи разбора."
+    )
+    for chat_id in settings.master_chat_id_list:
+        try:
+            await bot.send_message(chat_id, text)
+        except Exception:
+            logger.exception("Не удалось уведомить мастера chat_id=%s", chat_id)
+
+
+async def deliver_after_payment(
+    message: Message,
+    state: FSMContext,
+    *,
+    client_id: int,
+    client_name: str,
+    client_username: str | None,
+    order_id: int,
+    charge_id: str,
+    service_code: str,
+    service_title: str,
+    locale: str,
+    success_key: str = "ui.pay_success",
+) -> None:
+    """Единый постоплатный шаг (Stars/имитация/TON).
+
+    Ручной тариф (spec.manual) — авто-расчёта нет: подтверждаем клиенту и зовём
+    мастера, анкета НЕ запускается. Авто-тариф — обычный поток «оплата → анкета».
+    """
+    if spec_for(service_code).manual:
+        await message.answer(t("ui.pay_success_manual", locale))
+        await _notify_master(
+            message.bot,
+            order_id=order_id,
+            service_title=service_title,
+            client_id=client_id,
+            client_name=client_name,
+            client_username=client_username,
+        )
+        return
+    await message.answer(t(success_key, locale))
+    await begin_survey(
+        message,
+        state,
+        order_id=order_id,
+        charge_id=charge_id,
+        service_code=service_code,
+        service_title=service_title,
+        locale=locale,
+    )
 
 
 def _summary(data: dict) -> str:
