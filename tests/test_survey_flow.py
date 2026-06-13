@@ -38,7 +38,9 @@ async def test_finance_tariff_asks_mother_first():
     msg = fake_message("20.02.1990")
     await survey.step_birth_date(msg, st)
     assert await st.get_state() == SurveyStates.mother_birth_date
-    assert msg.answer.await_args.args[0] == texts.ASK_MOTHER_BD
+    # parents_required → обязательный вариант текста, без упоминания «Пропустить»
+    assert msg.answer.await_args.args[0] == texts.ASK_MOTHER_BD_REQ
+    assert "Пропустить" not in msg.answer.await_args.args[0]
 
 
 async def test_mother_stored_and_advances_to_father():
@@ -75,6 +77,16 @@ async def test_finance_skip_callback_does_not_advance():
     await survey.step_mother_birth_date(fake_message("06.08.1971"), st)
     await survey.skip_father(fake_query("survey:skip"), st)
     assert await st.get_state() == SurveyStates.father_birth_date
+
+
+async def test_optional_parents_keep_skip_text_and_button():
+    # Тариф без parents_required (DEFAULT_SPEC) — «Пропустить» и его текст на месте.
+    st = await _state_at("unknown_tariff")
+    msg = fake_message("20.02.1990")
+    await survey.step_birth_date(msg, st)
+    assert msg.answer.await_args.args[0] == texts.ASK_MOTHER_BD
+    assert "Пропустить" in msg.answer.await_args.args[0]
+    assert msg.answer.await_args.kwargs["reply_markup"] is not None
 
 
 async def test_skip_mother_then_skip_father_reaches_gender():

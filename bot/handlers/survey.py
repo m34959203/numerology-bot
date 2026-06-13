@@ -52,6 +52,13 @@ def _parents_kb(data: dict):
     return None if _parents_required(data) else keyboards.skip_kb(_loc(data))
 
 
+def _ask_parent(base_key: str, data: dict) -> str:
+    """Текст подсказки шага родителей: _req-вариант (без «Пропустить»,
+    с пометкой «обязательно»), если даты обязательны для тарифа."""
+    key = f"{base_key}_req" if _parents_required(data) else base_key
+    return t(key, _loc(data))
+
+
 def _loc(data: dict) -> str:
     """Локаль анкеты (заложена в state при старте, см. catalog/payment)."""
     return data.get("locale", "ru")
@@ -194,12 +201,11 @@ async def _ask_gender(message: Message, state: FSMContext) -> None:
 async def _after_basics(message: Message, state: FSMContext) -> None:
     """После даты рождения: родители → пол/девичья → подтверждение (по тарифу)."""
     data = await state.get_data()
-    loc = _loc(data)
     needs_parents, needs_name = _flags(data)
     if needs_parents:
         await state.set_state(SurveyStates.mother_birth_date)
         await message.answer(
-            t("ui.ask_mother_bd", loc), reply_markup=_parents_kb(data), parse_mode=None
+            _ask_parent("ui.ask_mother_bd", data), reply_markup=_parents_kb(data), parse_mode=None
         )
     elif needs_name:
         await _ask_gender(message, state)
@@ -293,7 +299,7 @@ async def step_mother_birth_date(message: Message, state: FSMContext) -> None:
     await state.update_data(mother_birth_date=bd.isoformat())
     await state.set_state(SurveyStates.father_birth_date)
     await message.answer(
-        t("ui.ask_father_bd", loc), reply_markup=_parents_kb(data), parse_mode=None
+        _ask_parent("ui.ask_father_bd", data), reply_markup=_parents_kb(data), parse_mode=None
     )
 
 
@@ -301,13 +307,12 @@ async def step_mother_birth_date(message: Message, state: FSMContext) -> None:
 async def skip_mother(query: CallbackQuery, state: FSMContext) -> None:
     await query.answer()
     data = await state.get_data()
-    loc = _loc(data)
     if _parents_required(data):  # обязательный тариф: «Пропустить» недопустим
-        await query.message.answer(t("ui.ask_mother_bd", loc), parse_mode=None)
+        await query.message.answer(_ask_parent("ui.ask_mother_bd", data), parse_mode=None)
         return
     await state.set_state(SurveyStates.father_birth_date)
     await query.message.answer(
-        t("ui.ask_father_bd", loc), reply_markup=_parents_kb(data), parse_mode=None
+        _ask_parent("ui.ask_father_bd", data), reply_markup=_parents_kb(data), parse_mode=None
     )
 
 
@@ -328,7 +333,7 @@ async def skip_father(query: CallbackQuery, state: FSMContext) -> None:
     await query.answer()
     data = await state.get_data()
     if _parents_required(data):  # обязательный тариф: «Пропустить» недопустим
-        await query.message.answer(t("ui.ask_father_bd", _loc(data)), parse_mode=None)
+        await query.message.answer(_ask_parent("ui.ask_father_bd", data), parse_mode=None)
         return
     await _after_parents(query.message, state)
 
