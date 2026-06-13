@@ -28,6 +28,8 @@
  "ui.ask_maiden_name": "Maiden name (before marriage) — to calculate your maiden name number.\nIf your name hasn’t changed, tap “Skip”.",
  "ui.ask_mother_bd": "Mother’s date of birth in DD.MM.YYYY format — to calculate Karmic Events.\nIf you don’t know it, tap “Skip”.",
  "ui.ask_father_bd": "Father’s date of birth in DD.MM.YYYY format — to calculate Karmic Events.\nIf you don’t know it, tap “Skip”.",
+ "ui.ask_mother_bd_req": "Mother’s date of birth in DD.MM.YYYY format.\nThis field is required — an accurate reading isn’t possible without it.",
+ "ui.ask_father_bd_req": "Father’s date of birth in DD.MM.YYYY format.\nThis field is required — an accurate reading isn’t possible without it.",
  "ui.confirm_header": "Please check your details:\n",
  "ui.confirm_footer": "\nIs everything correct?",
  "ui.pay_success": "Payment received ✅\nNow just fill in the questionnaire — it only takes a minute.",
