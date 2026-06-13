@@ -49,6 +49,34 @@ async def test_mother_stored_and_advances_to_father():
     assert await st.get_state() == SurveyStates.father_birth_date
 
 
+async def test_finance_mother_prompt_has_no_skip_button():
+    # Заказчик (аудио 13.06.2026): даты родителей обязательны — «Пропустить» убрать.
+    st = await _state_at("finance_1y")
+    msg = fake_message("20.02.1990")
+    await survey.step_birth_date(msg, st)
+    assert msg.answer.await_args.kwargs["reply_markup"] is None
+
+
+async def test_finance_father_prompt_has_no_skip_button():
+    st = await _state_at("finance_1y")
+    await survey.step_birth_date(fake_message("20.02.1990"), st)
+    msg = fake_message("06.08.1971")
+    await survey.step_mother_birth_date(msg, st)
+    assert msg.answer.await_args.kwargs["reply_markup"] is None
+
+
+async def test_finance_skip_callback_does_not_advance():
+    # Даже если придёт устаревший callback «Пропустить» — не пропускаем родителей.
+    st = await _state_at("finance_1y")
+    await survey.step_birth_date(fake_message("20.02.1990"), st)
+    await survey.skip_mother(fake_query("survey:skip"), st)
+    assert await st.get_state() == SurveyStates.mother_birth_date
+    # дошли до отца штатно, skip тоже не уводит дальше
+    await survey.step_mother_birth_date(fake_message("06.08.1971"), st)
+    await survey.skip_father(fake_query("survey:skip"), st)
+    assert await st.get_state() == SurveyStates.father_birth_date
+
+
 async def test_skip_mother_then_skip_father_reaches_gender():
     # Неизвестный код → DEFAULT_SPEC (безопасный максимум: родители + имя/пол).
     st = await _state_at("unknown_tariff")

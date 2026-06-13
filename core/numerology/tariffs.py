@@ -91,7 +91,8 @@ class TariffSpec:
     fields — атомарные блоки (см. константы выше). forecast_years ограничивает
     «Прогноз на N лет» (0 — не показывать/не урезать). manual=True — авто-расчёта
     нет, клиента направляют на контакт мастера. needs_parents/needs_name —
-    какие доп. поля анкеты собирать.
+    какие доп. поля анкеты собирать. parents_required=True — даты родителей
+    обязательны (анкета не показывает «Пропустить»); подразумевает needs_parents.
     """
 
     fields: frozenset[str]
@@ -99,6 +100,7 @@ class TariffSpec:
     manual: bool = False
     needs_parents: bool = False
     needs_name: bool = False
+    parents_required: bool = False
     contact_url: str | None = None
 
     @property
@@ -185,11 +187,13 @@ TARIFFS: dict[str, TariffSpec] = {
     ),
     # Финансовый прогноз на 1 год: финкод, помесячный прогноз, энергографик,
     # персональное число года (добавлено по фидбэку заказчицы 11.06.2026).
-    # Заказчик: «обязательно укажите имя родителей и год рождения».
+    # Заказчик (аудио 13.06.2026): даты родителей ОБЯЗАТЕЛЬНЫ — без них прогноз
+    # «не выходит точно», «пропустить» убрать. Отсюда parents_required=True.
     "finance_1y": TariffSpec(
         fields=frozenset({FINANCE_CODE, MOON_SUN_MONTHLY, PERSONAL_YEAR}),
         forecast_years=0,
         needs_parents=True,
+        parents_required=True,
     ),
     # Детские матрицы — ручная обработка (методики детского разбора нет в Excel).
     "children": TariffSpec(
