@@ -42,6 +42,16 @@ def _flags(data: dict) -> tuple[bool, bool]:
     return spec.needs_parents, spec.needs_name
 
 
+def _parents_required(data: dict) -> bool:
+    """Даты родителей обязательны для тарифа (без «Пропустить»)."""
+    return spec_for(data.get("service_code")).parents_required
+
+
+def _parents_kb(data: dict):
+    """Клавиатура шага родителей: скрываем «Пропустить», если даты обязательны."""
+    return None if _parents_required(data) else keyboards.skip_kb(_loc(data))
+
+
 def _loc(data: dict) -> str:
     """Локаль анкеты (заложена в state при старте, см. catalog/payment)."""
     return data.get("locale", "ru")
@@ -189,7 +199,7 @@ async def _after_basics(message: Message, state: FSMContext) -> None:
     if needs_parents:
         await state.set_state(SurveyStates.mother_birth_date)
         await message.answer(
-            t("ui.ask_mother_bd", loc), reply_markup=keyboards.skip_kb(loc), parse_mode=None
+            t("ui.ask_mother_bd", loc), reply_markup=_parents_kb(data), parse_mode=None
         )
     elif needs_name:
         await _ask_gender(message, state)
@@ -273,7 +283,8 @@ async def step_birth_date(message: Message, state: FSMContext) -> None:
 
 @router.message(SurveyStates.mother_birth_date, F.text)
 async def step_mother_birth_date(message: Message, state: FSMContext) -> None:
-    loc = _loc(await state.get_data())
+    data = await state.get_data()
+    loc = _loc(data)
     try:
         bd = parse_birth_date(message.text, loc)
     except ValidationError as e:
@@ -282,17 +293,21 @@ async def step_mother_birth_date(message: Message, state: FSMContext) -> None:
     await state.update_data(mother_birth_date=bd.isoformat())
     await state.set_state(SurveyStates.father_birth_date)
     await message.answer(
-        t("ui.ask_father_bd", loc), reply_markup=keyboards.skip_kb(loc), parse_mode=None
+        t("ui.ask_father_bd", loc), reply_markup=_parents_kb(data), parse_mode=None
     )
 
 
 @router.callback_query(SurveyStates.mother_birth_date, F.data == "survey:skip")
 async def skip_mother(query: CallbackQuery, state: FSMContext) -> None:
     await query.answer()
-    loc = _loc(await state.get_data())
+    data = await state.get_data()
+    loc = _loc(data)
+    if _parents_required(data):  # обязательный тариф: «Пропустить» недопустим
+        await query.message.answer(t("ui.ask_mother_bd", loc), parse_mode=None)
+        return
     await state.set_state(SurveyStates.father_birth_date)
     await query.message.answer(
-        t("ui.ask_father_bd", loc), reply_markup=keyboards.skip_kb(loc), parse_mode=None
+        t("ui.ask_father_bd", loc), reply_markup=_parents_kb(data), parse_mode=None
     )
 
 
@@ -311,6 +326,10 @@ async def step_father_birth_date(message: Message, state: FSMContext) -> None:
 @router.callback_query(SurveyStates.father_birth_date, F.data == "survey:skip")
 async def skip_father(query: CallbackQuery, state: FSMContext) -> None:
     await query.answer()
+    data = await state.get_data()
+    if _parents_required(data):  # обязательный тариф: «Пропустить» недопустим
+        await query.message.answer(t("ui.ask_father_bd", _loc(data)), parse_mode=None)
+        return
     await _after_parents(query.message, state)
 
 
